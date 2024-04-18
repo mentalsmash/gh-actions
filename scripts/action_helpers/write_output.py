@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-def write_output(vars: dict[str, object], export_env: list[str]):
+def write_output(vars: dict[str, object] | None = None, export_env: list[str] | None = None):
   """Helper function to write variables to GITHUB_OUTPUT.
   
   Optionally, re-export environment variables so that they may be
@@ -14,8 +14,8 @@ def write_output(vars: dict[str, object], export_env: list[str]):
     output.write("EOF\n")
   github_output = Path(os.environ["GITHUB_OUTPUT"])
   with github_output.open("a") as output:
-    for var in export_env:
+    for var in (export_env or []):
       val = os.environ.get(var, '')
       _output(var, val)
-    for var, val in vars.items():
+    for var, val in (vars or {}).items():
       _output(var, val)
