@@ -100,7 +100,9 @@ jobs:
             base_tag="${{env.BASE_TAG}}",
             prerelease_tag="${{env.PRERELEASE_TAG}}",
             ref_type="${{github.ref_type}}",
-            release_tags="${{env.RELEASE_TAGS}}",
+            release_tags="""\
+              ${{env.RELEASE_TAGS}}
+            """,
             tag_suffix="${{env.TAG_SUFFIX}}")
   
   build:

@@ -64,6 +64,11 @@ def configure(
       ] if ref_type == "branch" else []),
   ]
 
+  release_tags = "\n".join([
+    tag.strip()
+    for tag in release_tags.strip().splitlines()
+  ])
+
   write_output({
     "BADGE_BASE_IMG": badge_base_img,
     "BADGE_VERSION": badge_version,
