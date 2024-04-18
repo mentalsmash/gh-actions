@@ -13,11 +13,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import subprocess
-from pathlib import Path
+from action_helpers import (
+  sha_short,
+  write_output,
+  github_ref_vars,
+)
 
-def sha_short(clone_dir: Path | str) -> str:
-  return subprocess.run([
-    "git", "rev-parse", "--short", "HEAD"
-  ], cwd=clone_dir, stdout=subprocess.PIPE).stdout.decode().strip()
+def configure(
+  clone_dir: str,
+  ref_type: str,
+  ref_name: str,
+  repository: str,
+) -> None:
+  build_type, _ = github_ref_vars(clone_dir, ref_type, ref_name)
+
+  if ref_type == "branch":
+    version = sha_short(clone_dir)
+    color_version = "orange"
+  elif ref_type == "tag":
+    version = ref_name
+    color_version = "green"
+  else:
+    raise RuntimeError("invalid ref type", ref_type)
+
+  badge_filename = repository.replace("/", "-") + "-badge-" + build_type
+
+  write_output({
+    "VERSION": version,
+    "COLOR_VERSION": color_version,
+    "COLOR_BASE_IMG": "blue",
+    "TAG": build_type,
+    "BADGE_FILENAME": badge_filename,
+  })
+
 

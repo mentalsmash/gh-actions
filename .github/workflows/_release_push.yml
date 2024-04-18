@@ -5,28 +5,22 @@ run-name: |
 on:
   workflow_call:
     inputs:
-      test-tag:
+      docker-flavor-config:
         type: string
         required: true
-      test-tag-registry:
+      docker-tags-config:
         type: string
-        required: true
-      tags-config:
-        type: string
-        required: true
-      flavor-config:
-        type: string
-        required: true
-      release-to-dockerhub:
-        type: boolean
-        required: true
-      release-to-github:
-        type: boolean
         required: true
       release-tags:
         type: string
         required: true
       release-tag-platforms:
+        type: string
+        required: true
+      test-tag:
+        type: string
+        required: true
+      test-tag-registry:
         type: string
         required: true
 
@@ -51,6 +45,19 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
+      - name: Configure push
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers.workflows.release_push import configure
+
+          configure(
+            test_tag_registry="${{inputs.test-tag-registry}}",
+            release_tags="${{inputs.release-tags}}",
+          )
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -62,21 +69,21 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ inputs.release-tags }}
-          tags: ${{ inputs.tags-config }}
-          flavor: ${{ inputs.flavor-config }}
+          tags: ${{ inputs.docker-tags-config }}
+          flavor: ${{ inputs.docker-flavor-config }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
     
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: ${{ inputs.release-to-dockerhub || inputs.test-tag-registry == 'dockerhub'}}
+        if: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
     
       - name: Log in to GitHub
         uses: docker/login-action@v3
-        if: ${{ inputs.release-to-github || inputs.test-tag-registry == 'github' }}
+        if: ${{ steps.config.outputs.LOGIN_GITHUB }}
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

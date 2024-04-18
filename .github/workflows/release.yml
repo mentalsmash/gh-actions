@@ -19,60 +19,57 @@ permissions:
   packages: write
 
 env:
-  # Base image for the pre-release image
-  BASE_TAG: ubuntu:22.04
-  # Push pre-release image to GitHub for testing
-  BUILD_TAG: ghcr.io/${{ github.repository }}-test
-  # Id of the registry for the pre-release image. Other supported values: dockerhub
-  BUILD_TAG_REGISTRY: github
-  # Build platforms for the pre-release image (argument to "docker build")
-  BUILD_TAG_PLATFORMS: linux/amd64,linux/arm64
-  # Local directory where to clone the repository
-  CLONE_DIR: src/repo
-  # Image tag for the final release image.
-  RELEASE_TAGS: |
-    ghcr.io/${{github.repository}}
-  # Uncomment (and set RELEASE_TO_DOCKERHUB) to push the final images
-  # to both GitHub AND DockerHub.
-  # RELEASE_TAGS: |
-  #   ${{github.repository}}
-  #   ghcr.io/${{github.repository}}
-  # Build platforms for the final release image (argument to "docker build")
-  RELEASE_TAG_PLATFORMS: linux/amd64,linux/arm64
-  # Push the final release image to DockerHub
-  RELEASE_TO_DOCKERHUB: ''
-  # Push the final relase image to GitHUb
-  RELEASE_TO_GITHUB: y
-  # Add an arbitrary suffix to the image tags
-  TAG_SUFFIX: ''
-  # Platforms where the pre-release image will be tested.
-  # JSON array so that it can be parsed and used in a matrix.
-  TEST_TAG_PLATFORMS: '["linux/amd64", "linux/arm64"]' 
   # Gist IDs for the JSON objects backing release badges
   BADGE_NIGHTLY_VERSION:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
   BADGE_NIGHTLY_BASE_IMG: "1234567890ABCDEFGHIJKLMNOPQRSTUV"
   BADGE_STABLE_VERSION:   "1234567890ABCDEFGHIJKLMNOPQRSTUV"
   BADGE_STABLE_BASE_IMG:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  # Base image for the pre-release image
+  BASE_TAG: ubuntu:22.04
+  # Push pre-release image to GitHub for testing
+  PRERELEASE_TAG: ghcr.io/${{ github.repository }}-test
+  # Build platforms for the pre-release and final images
+  BUILD_PLATFORMS: linux/amd64,linux/arm64
+  # Local directory where to clone the repository
+  CLONE_DIR: src/repo
+  # Image tag for the final release image.
+  RELEASE_TAGS: |
+    ghcr.io/${{github.repository}}
+  # Uncomment to also push the final image to DockerHub
+  #   ${{github.repository}}
+  # Add an arbitrary suffix to the image tags
+  TAG_SUFFIX: ''
 
 jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      BUILD_TAG_VERSION: ${{steps.config.outputs.BUILD_TAG_VERSION}}
-      DOCKER_FLAVOR_CONFIG: ${{steps.config.outputs.DOCKER_FLAVOR_CONFIG}}
-      DOCKER_TAGS_CONFIG: ${{steps.config.outputs.DOCKER_TAGS_CONFIG}}
-      # Re-exported env variables
-      BASE_TAG: ${{steps.config.outputs.BASE_TAG}}
-      BUILD_TAG: ${{steps.config.outputs.BUILD_TAG}}
-      BUILD_TAG_REGISTRY: ${{ steps.config.outputs.BUILD_TAG_REGISTRY}}
-      BUILD_TAG_PLATFORMS: ${{ steps.config.outputs.BUILD_TAG_PLATFORMS}}
-      RELEASE_TAGS: ${{steps.config.outputs.RELEASE_TAGS}}
-      RELEASE_TO_DOCKERHUB: ${{steps.config.outputs.RELEASE_TO_DOCKERHUB}}
-      RELEASE_TO_GITHUB: ${{steps.config.outputs.RELEASE_TO_GITHUB}}
-      RELEASE_TAG_PLATFORMS: ${{steps.config.outputs.RELEASE_TAG_PLATFORMS}}
-      TEST_TAG_PLATFORMS: ${{steps.config.outputs.TEST_TAG_PLATFORMS}}
-      BADGE_VERSION: ${{steps.config.outputs.BADGE_VERSION}}
+      # Gist ID for the "base image" release badge
       BADGE_BASE_IMG: ${{steps.config.outputs.BADGE_BASE_IMG}}
+      # Gist ID for the "version" release badge
+      BADGE_VERSION: ${{steps.config.outputs.BADGE_VERSION}}
+      # Re-exported env BASE_TAG
+      BASE_TAG: ${{steps.config.outputs.BASE_TAG}}
+      # Re-exported env PRERELEASE_TAG
+      PRERELEASE_TAG: ${{steps.config.outputs.PRERELEASE_TAG}}
+      # Registry where the pre-release image is published
+      PRERELEASE_REGISTRY: ${{steps.config.outputs.PRERELEASE_REGISTRY}}
+      # Build platforms for the pre-release image and the final image
+      DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS}}
+      # "flavor" configuration for docker/metadata-action
+      DOCKER_FLAVOR_CONFIG: ${{steps.config.outputs.DOCKER_FLAVOR_CONFIG}}
+      # "tags" configuration for docker/metadata-action
+      DOCKER_TAGS_CONFIG: ${{steps.config.outputs.DOCKER_TAGS_CONFIG}}
+      # Pre-release image, full tag
+      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+      # Push the final release image to DockerHub
+      RELEASE_TO_DOCKERHUB: ${{steps.config.outputs.RELEASE_TO_DOCKERHUB}}
+      # Push the final relase image to GitHUb
+      RELEASE_TO_GITHUB: ${{steps.config.outputs.RELEASE_TO_GITHUB}}
+      # JSON array with the platforms where to test the pre-release image
+      TEST_PLATFORMS: ${{steps.config.outputs.TEST_PLATFORMS}}
+      # Re-exported env RELEASE_TAGS
+      RELEASE_TAGS: ${{steps.config.outputs.RELEASE_TAGS}}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -92,48 +89,19 @@ jobs:
         run: |
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers import *
-
-          tag = {
-            "tag": "latest${{ env.TAG_SUFFIX }}",
-            "branch": "branch${{ env.TAG_SUFFIX }}",
-          }["${{ github.ref_type }}"]
-
-          badge_version = {
-            "tag": "${{ env.BADGE_STABLE_VERSION }}",
-            "branch": "${{ env.BADGE_NIGHTLY_VERSION }}"
-          }["${{ github.ref_type }}"]
+          from action_helpers.workflows.release import configure
           
-          badge_base_img = {
-            "tag": "${{ env.BADGE_STABLE_BASE_IMG }}",
-            "branch": "${{ env.BADGE_NIGHTLY_BASE_IMG }}"
-          }["${{ github.ref_type }}"]
-
-          write_output({
-            "BUILD_TAG_VERSION": tag,
-            "DOCKER_TAGS_CONFIG": [
-              "type=semver,pattern={{version}}",
-              "type=semver,pattern={{major}}.{{minor}}",
-              "type=semver,pattern={{major}}",
-              *([
-                  f"type=raw,value={tag},priority=650",
-                  "type=ref,event=branch",
-                ] if "${{ github.ref_type }}" == "branch" else []),
-            ],
-            "DOCKER_FLAVOR_CONFIG": "suffix=${{env.TAG_SUFFIX}},onlatest=true",
-            "BADGE_VERSION": badge_version,
-            "BADGE_BASE_IMG": badge_base_img,
-          }, [
-            "BASE_TAG",
-            "BUILD_TAG",
-            "BUILD_TAG_REGISTRY",
-            "BUILD_TAG_PLATFORMS",
-            "RELEASE_TAGS",
-            "RELEASE_TO_DOCKERHUB",
-            "RELEASE_TO_GITHUB",
-            "RELEASE_TAG_PLATFORMS",
-            "TEST_TAG_PLATFORMS",
-          ])
+          configure(
+            badge_nightly_base_image="${{env.BADGE_NIGHTLY_BASE_IMG}}",
+            badge_nightly_version="${{env.BADGE_NIGHTLY_VERSION}}",
+            badge_stable_base_image="${{env.BADGE_STABLE_VERSION}}",
+            badge_stable_version="${{env.BADGE_STABLE_VERSION}}",
+            build_platforms="${{env.BUILD_PLATFORMS}}",
+            base_tag="${{env.BASE_TAG}}",
+            prerelease_tag="${{env.PRERELEASE_TAG}}",
+            ref_type="${{github.ref_type}}",
+            release_tags="${{env.RELEASE_TAGS}}",
+            tag_suffix="${{env.TAG_SUFFIX}}")
   
   build:
     needs: config
@@ -141,9 +109,9 @@ jobs:
     secrets: inherit
     with:
       base-tag: ${{ needs.config.outputs.BASE_TAG }}
-      build-tag: ${{ needs.config.outputs.BUILD_TAG }}
-      build-tag-registry: ${{ needs.config.outputs.BUILD_TAG_REGISTRY }}
-      build-tag-platforms: ${{ needs.config.outputs.BUILD_TAG_PLATFORMS }}
+      build-tag: ${{ needs.config.outputs.PRERELEASE_TAG }}
+      build-tag-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      build-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
       docker-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
       docker-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
 
@@ -153,14 +121,13 @@ jobs:
       - build
     strategy:
       matrix:
-        platform: ${{ fromJson(needs.config.outputs.TEST_TAG_PLATFORMS) }}
+        test-platform: ${{ fromJson(needs.config.outputs.TEST_PLATFORMS) }}
     uses: ./.github/workflows/_release_test.yml
     secrets: inherit
     with:
-      test-tag: |
-        ${{ needs.config.outputs.BUILD_TAG }}:${{ needs.config.outputs.BUILD_TAG_VERSION }}
-      test-tag-registry: ${{ needs.config.outputs.BUILD_TAG_REGISTRY }}
-      platform: ${{ matrix.platform }}
+      test-tag: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+      test-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
+      test-platform: ${{ matrix.test-platform }}
 
   push:
     needs:
@@ -169,15 +136,12 @@ jobs:
     uses: ./.github/workflows/_release_push.yml
     secrets: inherit
     with:
-      test-tag: |
-        ${{ needs.config.outputs.BUILD_TAG }}:${{ needs.config.outputs.BUILD_TAG_VERSION }}
-      test-tag-registry: ${{ needs.config.outputs.BUILD_TAG_REGISTRY }}
-      tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
-      flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      docker-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+      docker-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
       release-tags: ${{ needs.config.outputs.RELEASE_TAGS }}
-      release-tag-platforms: ${{ needs.config.outputs.RELEASE_TAG_PLATFORMS }}
-      release-to-dockerhub: ${{ needs.config.outputs.RELEASE_TO_DOCKERHUB }}
-      release-to-github: ${{ needs.config.outputs.RELEASE_TO_GITHUB }}
+      release-tag-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      test-tag: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+      test-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
 
   update_badges:
     needs:
@@ -187,7 +151,6 @@ jobs:
     secrets: inherit
     with:
       base-image: ${{ needs.config.outputs.BASE_TAG }}
-      # Uncomment to actually have the plan perform updates
-      # badge-version: ${{ needs.config.outputs.BADGE_VERSION }}
-      # badge-base-img: ${{ needs.config.outputs.BADGE_BASE_IMG }}
+      badge-version: ${{ needs.config.outputs.BADGE_VERSION }}
+      badge-base-img: ${{ needs.config.outputs.BADGE_BASE_IMG }}
 

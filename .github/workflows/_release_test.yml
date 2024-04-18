@@ -1,22 +1,22 @@
 name: Release Step (Test Image)
 run-name: |
-  release (test image ${{inputs.test-tag}} on ${{inputs.platform}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+  release (test image ${{inputs.test-tag}} on ${{inputs.test-platform}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
 
 on:
   workflow_call:
     inputs:
       test-tag:
         type: string
-        required: True
+        required: true
       test-tag-registry:
         type: string
-        default: ''
-      platform:
+        required: true
+      test-platform:
         type: string
         required: true
 
 concurrency:
-  group: release-test-image-${{ github.ref }}-${{ inputs.test-tag}}-${{ inputs.platform }}
+  group: release-test-image-${{ github.ref }}-${{ inputs.test-tag}}-${{ inputs.test-platform }}
 
 env:
   CLONE_DIR: src/repo
@@ -31,7 +31,7 @@ jobs:
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
-      RUNNER: ${{ fromJson(steps.config.outputs.RUNNER) }}
+      RUNNER: ${{ steps.config.outputs.RUNNER }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -45,35 +45,14 @@ jobs:
         run: |
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers import *
+          from action_helpers.workflows.release_test import configure
 
-          if "${{github.ref_type}}" == "branch":
-            build_label = "nightly"
-            build_version = sha_short("${{ env.CLONE_DIR }}")
-          else:
-            build_label = "release"
-            build_version = "${{github.ref_name}}"
-          
-          if "${{inputs.platform}}" == "linux/arm64":
-            runner = '["self-hosted", "linux", "arm64"]'
-          elif "${{inputs.platform}}" == "linux/amd64":
-            runner = '"ubuntu-latest"'
-          else:
-            raise RuntimeError("unsupported build platform", "${{inputs.platform}}")
-
-          repository_name = "${{github.repository}}".replace("/", "-")
-          platform_name = "${{inputs.platform}}".replace("/", "-")
-          test_date = current_timestamp()
-          test_id = f"release-{platform_name}-{build_label}__{build_version}"
-          test_artifact = f"{repository_name}-test-{test_id}__{test_date}"
-
-          write_output({
-            "TEST_ID": test_id,
-            "TEST_ARTIFACT": test_artifact,
-            "TEST_DATE": test_date,
-            "RUNNER": runner,
-          })
-
+          configure(
+            clone_dir="${{env.CLONE_DIR}}",
+            ref_name="${{github.ref_name}}",
+            ref_type="${{github.ref_type}}",
+            repository="${{github.repository}}",
+            test_platform="${{inputs.test-platform}}")
 
   test:
     needs: config
@@ -113,7 +92,7 @@ jobs:
           tags: ${{ env.LOCAL_TESTER_IMAGE }}
           load: true
           context: ${{ env.CLONE_DIR }}
-          platforms: ${{ inputs.platform }}
+          platforms: ${{ inputs.test-platform }}
           build-args: |
             BASE_IMAGE=${{ inputs.test-tag }}
     

@@ -31,32 +31,22 @@ jobs:
 
     - name: Generate badge configuration
       id: config
+      shell: python
       run: |
-        case "${{ github.ref_type}}" in
-          branch)
-            sha_short=$(cd ${{ env.CLONE_DIR }} && git rev-parse --short HEAD)
-            version=${sha_short}
-            color_version=orange
-            tag=nightly
-            ;;
-          tag)
-            version=${{ github.ref_name }}
-            color_version=green
-            tag=stable
-            ;;
-        esac
-        badge_filename=$(echo ${{github.repository}} | tr / -)-badge-${tag}
-        (
-          echo VERSION=${version}
-          echo COLOR_VERSION=${color_version}
-          echo COLOR_BASE_IMG=blue
-          echo TAG=${tag}
-          echo BADGE_FILENAME=${badge_filename}
-        ) >> ${GITHUB_OUTPUT}
+        import sys
+        sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+        from action_helpers.workflows.release_badges import configure
+
+        configure(
+          clone_dir="${{env.CLONE_DIR}}",
+          ref_type="${{github.ref_type}}",
+          ref_name="${{github.ref_name}}",
+          repository="${{github.repository}}")
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      if: inputs.badge-version
+      # Comment out to actually update the badge
+      if: ${{ false }}
       with:
         auth: ${{ secrets.GIST_UPDATE_TOKEN }}
         gistID: ${{ inputs.badge-version }}
@@ -67,7 +57,8 @@ jobs:
 
     - name: Update base image badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      if: inputs.badge-base-img
+      # Comment out to actually update the badge
+      if: ${{ false }}
       with:
         auth: ${{ secrets.GIST_UPDATE_TOKEN }}
         gistID: ${{ inputs.badge-base-img }}

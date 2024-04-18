@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import subprocess
-from pathlib import Path
-
-def sha_short(clone_dir: Path | str) -> str:
-  return subprocess.run([
-    "git", "rev-parse", "--short", "HEAD"
-  ], cwd=clone_dir, stdout=subprocess.PIPE).stdout.decode().strip()
-
+def action_runner(platform: str) -> str:
+  if platform == "linux/arm64":
+    return '["self-hosted", "linux", "arm64"]'
+  elif platform == "linux/amd64":
+    return '"ubuntu-latest"'
+  else:
+    raise RuntimeError("unsupported build platform", platform)

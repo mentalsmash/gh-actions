@@ -13,11 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import subprocess
-from pathlib import Path
+from action_helpers import (
+  docker_registry_from_tag,
+  write_output,
+)
 
-def sha_short(clone_dir: Path | str) -> str:
-  return subprocess.run([
-    "git", "rev-parse", "--short", "HEAD"
-  ], cwd=clone_dir, stdout=subprocess.PIPE).stdout.decode().strip()
+def configure(
+  release_tags: str,
+  test_tag_registry: str,
+) -> None:
+  registries = set(test_tag_registry)
+  for rel_tag in release_tags.splitlines():
+    registry = docker_registry_from_tag(rel_tag)
+    registries.add(registry)
+
+  write_output({
+    "LOGIN_DOCKERHUB": "dockerhub" in registries,
+    "LOGIN_GITHUB": "github" in registries,
+  })
+
 
