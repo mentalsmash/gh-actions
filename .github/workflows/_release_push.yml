@@ -54,8 +54,8 @@ jobs:
           from action_helpers.workflows.release_push import configure
 
           configure(
-            test_tag_registry="${{inputs.test-tag-registry}}",
             release_tags="${{inputs.release-tags}}",
+            test_tag_registry="${{inputs.test-tag-registry}}",
           )
 
       - name: Set up QEMU
