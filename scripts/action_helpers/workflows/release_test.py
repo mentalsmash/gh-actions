@@ -13,12 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from action_helpers import (
-  github_ref_vars,
-  action_runner,
-  current_timestamp,
-  write_output,
-)
+from action_helpers.action_runner import action_runner
+from action_helpers.current_timestamp import current_timestamp
+from action_helpers.github_ref_vars import github_ref_vars
+from action_helpers.write_output import write_output
 
 def configure(
   clone_dir: str,

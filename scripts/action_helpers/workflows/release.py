@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from action_helpers import (
-  write_output,
-  docker_registry_from_tag,
-)
+from action_helpers.write_output import write_output
+from action_helpers.docker_registry_from_tag import docker_registry_from_tag
 
 def configure(
   badge_nightly_base_image: str,

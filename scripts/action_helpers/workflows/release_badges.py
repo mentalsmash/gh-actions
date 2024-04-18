@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from action_helpers import (
-  sha_short,
-  write_output,
-  github_ref_vars,
-)
+from action_helpers.sha_short import sha_short
+from action_helpers.write_output import write_output
+from action_helpers.github_ref_vars import github_ref_vars
 
 def configure(
   clone_dir: str,
