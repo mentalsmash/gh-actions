@@ -12,7 +12,7 @@ def write_output(vars: dict[str, object], export_env: list[str]):
     output.write(str(val))
     output.write("EOF")
   github_output = Path(os.environ["GITHUB_OUTPUT"])
-  with github_output.open("wa") as output:
+  with github_output.open("a") as output:
     for var in export_env:
       val = os.environ.get(var, '')
       _output(var, val)
