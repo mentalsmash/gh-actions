@@ -144,8 +144,8 @@ jobs:
       build-tag: ${{ needs.config.outputs.BUILD_TAG }}
       build-tag-registry: ${{ needs.config.outputs.BUILD_TAG_REGISTRY }}
       build-tag-platforms: ${{ needs.config.outputs.BUILD_TAG_PLATFORMS }}
-      tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
-      flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      docker-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+      docker-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
 
   test:
     needs:
