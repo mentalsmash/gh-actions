@@ -14,7 +14,7 @@
 # limitations under the License.
 ###############################################################################
 from pathlib import Path
-from . import sha_short
+from action_helpers.sha_short import sha_short
 
 def github_ref_vars(clone_dir: Path | str, ref_type: str, ref_name: str) -> tuple[str, str]:
   if ref_type == "branch":
