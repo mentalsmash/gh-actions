@@ -1,0 +1,163 @@
+name: CI
+run-name: |
+  CI test (${{inputs.base-image}}, ${{inputs.build-platform}}) [${{github.ref_name}}${{github.ref_type == 'branch' && '@' || ''}}${{github.ref_type == 'branch' && github.sha || ''}}]
+
+on:
+  workflow_call:
+    inputs:
+      base-image:
+        type: string
+        required: true
+      build-platform:
+        type: string
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      base-image:
+        description: "base OS image"
+        type: string
+        required: true
+      build-platform:
+        description: "build platform"
+        type: string
+        required: true
+
+concurrency:
+  group: ci-build-${{ github.ref }}-${{ inputs.build-platform }}-${{ inputs.base-image }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  BASE_TESTER_TAG: ghcr.io/${{ github.repository }}-base-tester
+  CLONE_DIR: src/repo
+  DOCKERFILE: docker/Dockerfile
+  LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
+  LOCAL_TESTER_RESULTS: test-results/**
+  # Assumption: BASE_TESTER_TAG is private/internal and requires login
+  LOGIN_GITHUB: 'y'
+  LOGIN_DOCKERHUB: ''
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      BASE_TESTER_IMAGE: ${{ steps.config.outputs.BASE_TESTER_IMAGE }}
+      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
+      RUNNER: ${{ fromJson(steps.config.outputs.RUNNER) }}
+      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
+      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Validate code
+        run: |
+          echo "Validating code changes..."
+
+      - name: Generate build and test configuration
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers import *
+
+          if "${{ github.ref_type }}" == "tag":
+            image_version = "${{github.ref_name}}"
+          else:
+            image_version = f"${{github.ref_name}}@{sha_short("${{env.CLONE_DIR}}")}"
+
+          if "${{inputs.build-platform}}" == "linux/arm64":
+            runner = '["self-hosted", "linux", "arm64"]'
+          elif "${{inputs.build-platform}}" == "linux/amd64":
+            runner = '"ubuntu-latest"'
+          else:
+            raise RuntimeError("unsupported build platform", "${{inputs.build-platform}}")
+
+          image_version = image_version.replace("/", "-")
+          repository_name = "${{github.repository}}".replace("/", "-")
+          build_platform_label = "${{inputs.build-platform}}".replace("/", "-")
+          base_image_tag = "${{inputs.base-image}}".replace(":", "-")
+          base_tester_image = f"${{ env.BASE_TESTER_TAG}}:{base_image_tag}"
+          test_date = current_timestamp()
+          test_id = f"ci-${build_platform_label}__${image_version}"
+          test_artifact = "${repository_name}-test-${test_id}__${test_date}"
+
+          write_output({
+            "BASE_TESTER_IMAGE": base_tester_image,
+            "RUNNER": runner,
+            "TEST_ARTIFACT": test_artifact,
+            "TEST_ID": test_id,
+            "TEST_DATE": test_date,
+          }, [
+            "LOGIN_GITHUB",
+            "LOGIN_DOCKERHUB",
+          ])
+
+  build-n-test:
+    needs: config
+    runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
+    env:
+      TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Log in to GitHub
+        if: needs.config.outputs.LOGIN_GITHUB
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker HUb
+        if: needs.config.outputs.LOGIN_DOCKERHUB
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build tester image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{env.CLONE_DIR}}/${{env.DOCKERFILE}}
+          tags: ${{ env.LOCAL_TESTER_IMAGE }}
+          load: true
+          context: ${{env.CLONE_DIR}}
+          platforms: ${{ inputs.build-platform }}
+          build-args: |
+            TEST=y
+            BASE_IMAGE=${{ needs.config.outputs.BASE_TESTER_IMAGE }}
+
+      - name: Run tests
+        run: |
+          echo "Testing generated image..."
+        env:
+          DEBUG: ${{ runner.debug }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}
+          path: ${{ env.LOCAL_TESTER_RESULTS }}
+

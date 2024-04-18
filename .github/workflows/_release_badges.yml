@@ -1,0 +1,77 @@
+name: Release Step (Update Badges)
+run-name: |
+  release (update badges) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+
+concurrency:
+  group: release-${{github.ref_type == 'branch' && 'nightly' || 'stable'}}-${{github.ref}}-update-badges
+
+on:
+  workflow_call:
+    inputs:
+      base-image:
+        type: string
+        required: true
+      badge-version:
+        type: string
+      badge-base-img:
+        type: string
+
+env:
+  CLONE_DIR: src/repo
+
+jobs:
+  update_badges:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone source repository
+      uses: actions/checkout@v4
+      with:
+        path: ${{ env.CLONE_DIR }}
+        submodules: true
+
+    - name: Generate badge configuration
+      id: config
+      run: |
+        case "${{ github.ref_type}}" in
+          branch)
+            sha_short=$(cd ${{ env.CLONE_DIR }} && git rev-parse --short HEAD)
+            version=${sha_short}
+            color_version=orange
+            tag=nightly
+            ;;
+          tag)
+            version=${{ github.ref_name }}
+            color_version=green
+            tag=stable
+            ;;
+        esac
+        badge_filename=$(echo ${{github.repository}} | tr / -)-badge-${tag}
+        (
+          echo VERSION=${version}
+          echo COLOR_VERSION=${color_version}
+          echo COLOR_BASE_IMG=blue
+          echo TAG=${tag}
+          echo BADGE_FILENAME=${badge_filename}
+        ) >> ${GITHUB_OUTPUT}
+
+    - name: Update version badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      if: inputs.badge-version
+      with:
+        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
+        gistID: ${{ inputs.badge-version }}
+        filename: ${{ steps.config.outputs.BADGE_FILENAME }}-version.json
+        label: version
+        message: ${{ steps.config.outputs.VERSION }}
+        color: ${{ steps.config.outputs.COLOR_VERSION }}
+
+    - name: Update base image badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      if: inputs.badge-base-img
+      with:
+        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
+        gistID: ${{ inputs.badge-base-img }}
+        filename: ${{ steps.config.outputs.BADGE_FILENAME }}-base-img.json
+        label: base image
+        message: ${{ inputs.base-image }}
+        color: ${{ steps.config.outputs.COLOR_BASE_IMG }}

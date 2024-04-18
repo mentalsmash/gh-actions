@@ -1,0 +1,110 @@
+name: Pull Request
+run-name: |
+  PR #${{ github.event.pull_request.number }} [${{ github.event_name == 'pull_request' && 'updated' || 'reviewed' }}, ${{ github.event_name == 'pull_request' && github.event.action || github.event.review.state }}${{ github.event.pull_request.draft && ', draft' || '' }}] ${{github.event.pull_request.title}}
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      # No sense in doing these tests for these file
+      - 'README.md'
+      - 'docs/**/*'
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: pr-test-${{ github.ref }}-${{github.event_name}}
+  cancel-in-progress: true
+
+permissions:
+  packages: read
+  contents: read
+
+env:
+  CLONE_DIR: src/repo
+  # If you change these values, make sure to update
+  # full-validation.strategy.matrix.excluded 
+  BASIC_VALIDATION_PLATFORMS: '["amd64"]'
+  BASIC_VALIDATION_BASE_IMAGES: '["ubuntu:22.04"]'
+  FULL_VALIDATION_PLATFORMS: '["amd64", "arm64"]'
+  FULL_VALIDATION_BASE_IMAGES: '["ubuntu:22.04"]'
+
+jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      VALIDATE_BASIC: ${{ steps.config.outputs.VALIDATE_BASIC }}
+      VALIDATE_FULL: ${{ steps.config.outputs.VALIDATE_FULL }}
+      BASIC_VALIDATION_PLATFORMS: ${{ steps.config.outputs.BASIC_VALIDATION_PLATFORMS }}
+      BASIC_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.BASIC_VALIDATION_BASE_IMAGES }}
+      FULL_VALIDATION_PLATFORMS: ${{ steps.config.outputs.FULL_VALIDATION_PLATFORMS }}
+      FULL_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.FULL_VALIDATION_BASE_IMAGES }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: "Generate job configuration"
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers import *
+
+          validate_full, validate_basic, test_not_needed = pull_request_validate_actions(
+            clone_dir="${{ env.CLONE_DIR }}",
+            pr_no=${{ github.event.pull_request.number }},
+            event_name="${{ github.event_name }}",
+            event_action"${{ github.event.action }}"
+            is_draft=bool("${{ github.event.pull_request.draft && 'True' || '' }}"),
+            review_state="${{ github.event_name == 'pullrequest' &&  github.event.review.state || ''}}",
+          )
+          write_output({
+            "VALIDATE_FULL": validate_full,
+            "VALIDATE_BASIC": validate_basic,
+          }, [
+            "BASIC_VALIDATION_PLATFORMS",
+            "BASIC_VALIDATION_BASE_IMAGES",
+          ])
+
+  basic-validation:
+    needs: check-trigger
+    if: ${{ needs.check-trigger.outputs.VALIDATE_BASIC }}
+    strategy:
+      matrix:
+        build-platform: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BASE_IMAGES) }}
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    with:
+      build-platform: ${{matrix.build-platform}}
+      base-image: ${{matrix.base-image}}
+
+  full-validation:
+    needs: check-trigger
+    if: ${{ needs.check-trigger.outputs.VALIDATE_FULL }}
+    strategy:
+      matrix:
+        build-platform: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BASE_IMAGES) }}
+        # These values are "hard-coded" and must be updated manually here
+        exclude:
+          - build-platform: amd64
+            base-image: "ubuntu:22.04"
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+    with:
+      build-platform: ${{matrix.build-platform}}
+      base-image: ${{matrix.base-image}}

@@ -1,0 +1,92 @@
+name: Release Step (Build Image)
+run-name: |
+  release - build image on ${{inputs.base-tag}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+
+on:
+  workflow_call:
+    inputs:
+      base-tag:
+        type: string
+        required: true
+      build-tag:
+        type: string
+        required: true
+      build-tag-registry:
+        type: string
+        required: true
+      build-tag-platforms:
+        type: string
+        required: true
+      docker-tags-config:
+        type: string
+        required: true
+      docker-flavor-config:
+        type: string
+        required: true
+
+concurrency:
+  group: release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}-${{github.ref}}-build
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CLONE_DIR: src/repo
+  DOCKERFILE: docker/Dockerfile
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.build-tag }}
+          tags: ${{ inputs.docker-tags-config }}
+          flavor: ${{ inputs.docker-flavor-config }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+
+      - name: Log in to GitHub
+        if: inputs.build-tag-registry == 'github'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Log in to Docker HUb
+        if: inputs.build-tag-registry == 'dockerhub'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push test images
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+          push: true
+          context: ${{ env.CLONE_DIR }}
+          platforms: ${{ inputs.build-tag-platforms }}
+          build-args: |
+            BASE_IMAGE=${{ inputs.base-tag }}
+

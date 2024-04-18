@@ -1,0 +1,96 @@
+name: Release Step (Push Image)
+run-name: |
+  release (push [${{github.ref_type == 'branch' && 'nightly' || 'stable'}} image, ${{github.ref_name}}]
+
+on:
+  workflow_call:
+    inputs:
+      test-tag:
+        type: string
+        required: true
+      test-tag-registry:
+        type: string
+        required: true
+      tags-config:
+        type: string
+        required: true
+      flavor-config:
+        type: string
+        required: true
+      release-to-dockerhub:
+        type: boolean
+        required: true
+      release-to-github:
+        type: boolean
+        required: true
+      release-tags:
+        type: string
+        required: true
+      release-tag-platforms:
+        type: string
+        required: true
+
+concurrency:
+  group: release-${{github.ref_type == 'branch' && 'nightly' || 'stable'}}-${{ github.ref }}-push-images
+
+env:
+  CLONE_DIR: src/repo
+  DOCKERFILE: docker/release/Dockerfile
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+ 
+      - name: Extract image metadata
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ inputs.release-tags }}
+          tags: ${{ inputs.tags-config }}
+          flavor: ${{ inputs.flavor-config }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+    
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: ${{ inputs.release-to-dockerhub || inputs.test-tag-registry == 'dockerhub'}}
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+      - name: Log in to GitHub
+        uses: docker/login-action@v3
+        if: ${{ inputs.release-to-github || inputs.test-tag-registry == 'github' }}
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+ 
+      - name: Build and push images to GitHub
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+          push: true
+          context: ${{ env.CLONE_DIR }}
+          platforms: ${{ inputs.release-tag-platforms }}
+          build-args: |
+            BASE_IMAGE=${{ inputs.test-tag }}

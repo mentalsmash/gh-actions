@@ -1,0 +1,133 @@
+name: Release Step (Test Image)
+run-name: |
+  release (test image ${{inputs.test-tag}} on ${{inputs.platform}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+
+on:
+  workflow_call:
+    inputs:
+      test-tag:
+        type: string
+        required: True
+      test-tag-registry:
+        type: string
+        default: ''
+      platform:
+        type: string
+        required: true
+
+concurrency:
+  group: release-test-image-${{ github.ref }}-${{ inputs.test-tag}}-${{ inputs.platform }}
+
+env:
+  CLONE_DIR: src/repo
+  DOCKERFILE: docker/test/Dockerfile
+  LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
+  LOCAL_TESTER_RESULTS: test-results/**
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
+      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+      RUNNER: ${{ fromJson(steps.config.outputs.RUNNER) }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Configure test
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers import *
+
+          if "${{github.ref_type}}" == "branch":
+            build_label = "nightly"
+            build_version = sha_short("${{ env.CLONE_DIR }}")
+          else:
+            build_label = "release"
+            build_version = "${{github.ref_name}}"
+          
+          if "${{inputs.platform}}" == "linux/arm64":
+            runner = '["self-hosted", "linux", "arm64"]'
+          elif "${{inputs.platform}}" == "linux/amd64":
+            runner = '"ubuntu-latest"'
+          else:
+            raise RuntimeError("unsupported build platform", "${{inputs.platform}}")
+
+          repository_name = "${{github.repository}}".replace("/", "-")
+          platform_name = "${{inputs.platform}}".replace("/", "-")
+          test_date = current_timestamp()
+          test_id = f"release-{platform_name}-{build_label}__{build_version}"
+          test_artifact = f"{repository_name}-test-{test_id}__{test_date}"
+
+          write_output({
+            "TEST_ID": test_id,
+            "TEST_ARTIFACT": test_artifact,
+            "TEST_DATE": test_date,
+            "RUNNER": runner,
+          })
+
+
+  test:
+    needs: config
+    runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
+    env:
+      TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub
+        if: inputs.test-tag-registry == 'github'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Log in to Docker Hub
+        if: inputs.test-tag-registry == 'dockerhub'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build tester image
+        uses: docker/build-push-action@v5
+        with:
+          file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+          tags: ${{ env.LOCAL_TESTER_IMAGE }}
+          load: true
+          context: ${{ env.CLONE_DIR }}
+          platforms: ${{ inputs.platform }}
+          build-args: |
+            BASE_IMAGE=${{ inputs.test-tag }}
+    
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+
+          # TODO run tests with tester image
+        env:
+          DEBUG: ${{ runner.debug }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}
+          path: ${{ env.LOCAL_TESTER_RESULTS }}
