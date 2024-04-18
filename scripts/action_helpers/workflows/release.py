@@ -25,7 +25,7 @@ def configure(
   badge_stable_version: str,
   base_tag: str,
   build_platforms: str,
-  build_tag: str,
+  prerelease_tag: str,
   ref_type: str,
   release_tags: str,
   tag_suffix: str,
@@ -35,8 +35,8 @@ def configure(
     "branch": f"branch{tag_suffix}",
   }[ref_type]
 
-  prerel_registry = docker_registry_from_tag(build_tag)
-  prerel_image = f"{build_tag}:{tag}"
+  prerel_registry = docker_registry_from_tag(prerelease_tag)
+  prerel_image = f"{prerelease_tag}:{tag}"
 
   badge_version = {
     "tag": badge_stable_version,
@@ -73,10 +73,10 @@ def configure(
     "BADGE_BASE_IMG": badge_base_img,
     "BADGE_VERSION": badge_version,
     "BASE_TAG": base_tag,
-    "BUILD_TAG": build_tag,
     "DOCKER_BUILD_PLATFORMS": build_platforms,
     "DOCKER_TAGS_CONFIG": docker_tags_config,
     "DOCKER_FLAVOR_CONFIG": f"suffix={tag_suffix},onlatest=true",
+    "PRERELEASE_TAG": prerelease_tag,
     "PRERELEASE_IMAGE": prerel_image,
     "PRERELEASE_REGISTRY": prerel_registry,
     "RELEASE_TAGS": release_tags,
