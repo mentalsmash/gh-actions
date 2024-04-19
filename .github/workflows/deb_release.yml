@@ -47,8 +47,8 @@ jobs:
           fi
           (
             echo DO_BUILD=${do_build}
-            echo DEB_PLATFORMS="${{ env.DEB_PLATFORMS }}"
-            echo DEB_IMAGES="${{ env.DEB_IMAGES }}"
+            echo DEB_PLATFORMS='${{ env.DEB_PLATFORMS }}'
+            echo DEB_IMAGES='${{ env.DEB_IMAGES }}'
             echo 'DEB_ARTIFACTS<<EOF'
             echo "${{ env.DEB_ARTIFACTS }}"
             echo EOF
