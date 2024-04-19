@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+import shlex
 from pathlib import Path
 import os
 def write_output(vars: dict[str, object] | None = None, export_env: list[str] | None = None):
@@ -23,13 +24,20 @@ def write_output(vars: dict[str, object] | None = None, export_env: list[str] | 
   where the env context is not available
   """
   def _output(var: str, val: object):
-    output.write(f"{var}<<EOF""\n")
     if isinstance(val, bool):
       # Normalize booleans to non-empty/empty strings
-      val = 'y' if val else ''
-    output.write(str(val))
+      # Use lowercase variable name for easier debugging
+      val = var.lower() if val else ''
+    qval = shlex.quote(val)
+    print(f"OUTPUT [{var}]: {qval}")
+    output.write(var)
+    output.write("=")
+    output.write(qval)
     output.write("\n")
-    output.write("EOF\n")
+    # output.write(f"{var}<<EOF""\n")
+    # output.write(str(val))
+    # output.write("\n")
+    # output.write("EOF\n")
   github_output = Path(os.environ["GITHUB_OUTPUT"])
   with github_output.open("a") as output:
     for var in (export_env or []):
