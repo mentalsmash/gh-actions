@@ -24,6 +24,9 @@ def write_output(vars: dict[str, object] | None = None, export_env: list[str] | 
   """
   def _output(var: str, val: object):
     output.write(f"{var}<<EOF""\n")
+    if isinstance(val, bool):
+      # Normalize booleans to non-empty/empty strings
+      val = 'y' if val else ''
     output.write(str(val))
     output.write("\n")
     output.write("EOF\n")
