@@ -41,7 +41,7 @@ permissions:
 env:
   CLONE_DIR: src/repo
   DEB_DIST_DIR: debian-dist
-  DEB_BUILDER: ghcr.io/${{ github.repository }}-deb-builder
+  DEB_BUILDER: ghcr.io/${{ github.repository }}-debian-builder
   DOCKERFILE: docker/debian-tester/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest,
   LOCAL_TESTER_RESULTS: src/repo/test-results
