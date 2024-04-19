@@ -28,7 +28,9 @@ def project_config(
       if isinstance(v, dict):
         v = _dict_to_ntuple(k, v)
       fields[k] = v
-    val_cls = namedtuple(key, val.keys())
+    keys = list(val.keys())
+    print("DEFINING TUPLE:", key, keys)
+    val_cls = namedtuple(key, keys)
     return val_cls(**val)
 
   return _dict_to_ntuple("result", {
