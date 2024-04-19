@@ -172,8 +172,9 @@ use it for a personal repository.
        ```
 
      - **TAG_SUFFIX**: an optional suffix that will be appended to the
-        generated image tags. Not needed unless the project wants to generate multiple
-        "flavors" of the image.
+        generated image tags. Not needed unless the project is supposed to generate multiple
+        "flavors" of the image (which requires creating multiple copies of the
+        [Release workflow](.github/workflows/release.yml), each one using a different suffix).
 
    - The file also contains settings for "release badges", allowing you to specify the
      id of the "gists" used to store each badge's backing JSON object. Two badges are

@@ -1,0 +1,48 @@
+name: Release (Cleanup)
+run-name: |
+  release cleanup [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
+
+on:
+  workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+
+concurrency:
+  group: release-cleanup-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  packages: read
+
+env:
+  CLONE_DIR: src/uno
+
+jobs:
+  cleanup_jobs:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: "Clean up workflow runs"
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -e GH_TOKEN=${GH_TOKEN} \
+            -w /workspace \
+            ${ADMIN_IMAGE} \
+            ${{ env.CLONE_DIR }}/scripts/ci-admin \
+              -c ${{ github.run_id }} \
+              nightly-cleanup \
+              -r ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ADMIN_IMAGE: ghcr.io/mentalsmash/uno-ci-admin:latest
+
