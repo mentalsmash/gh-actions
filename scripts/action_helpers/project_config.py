@@ -27,7 +27,9 @@ def project_config(
     for k, v in val.items():
       if isinstance(v, dict):
         v = _dict_to_ntuple(k, v)
+      k = k.replace("-", "_")
       fields[k] = v
+    
     keys = list(val.keys())
     print("DEFINING TUPLE:", key, keys)
     val_cls = namedtuple(key, keys)
