@@ -47,8 +47,12 @@ jobs:
 
           configure(
             deb_artifacts_prefix="${{ env.DEB_ARTIFACTS_PREFIX }}",
-            deb_images="${{ env.DEB_IMAGES }}",
-            deb_platforms="${{ env.DEB_PLATFORMS }}",
+            deb_images="""\
+              ${{ env.DEB_IMAGES }}
+            """,
+            deb_platforms="""\
+              ${{ env.DEB_PLATFORMS }}
+            """,
             event_name="${{ github.event_name }}",
             ref_name="${{ github.ref_name }}",
             ref_type="${{ github.ref_type }}")
