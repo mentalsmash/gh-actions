@@ -22,7 +22,7 @@ env:
   CLONE_DIR: src/repo
   DOCKERFILE: docker/test/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
-  LOCAL_TESTER_RESULTS: src/repo/test-results
+  LOCAL_TESTER_RESULTS: test-results
 
 jobs:
   config:
@@ -107,4 +107,4 @@ jobs:
         if: always()
         with:
           name: ${{ needs.config.outputs.TEST_ARTIFACT }}
-          path: ${{ env.LOCAL_TESTER_RESULTS }}/**
+          path: ${{ env.CLONE_DIR }}/${{ env.LOCAL_TESTER_RESULTS }}/**
