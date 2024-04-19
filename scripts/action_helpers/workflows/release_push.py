@@ -14,7 +14,7 @@
 # limitations under the License.
 ###############################################################################
 from action_helpers.write_output import write_output
-from scripts.action_helpers.extract_registries import extract_registries
+from action_helpers.extract_registries import extract_registries
 
 def configure(
   release_tags: str,
