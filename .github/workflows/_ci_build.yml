@@ -32,7 +32,7 @@ permissions:
   packages: read
 
 env:
-  BASE_TESTER_TAG: ghcr.io/${{ github.repository }}-base-tester
+  BASE_TESTER_TAG: ubuntu:22.04
   CLONE_DIR: src/repo
   DOCKERFILE: docker/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
