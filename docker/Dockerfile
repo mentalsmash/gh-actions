@@ -48,6 +48,8 @@ ENV LANG en_US.UTF-8
 ###############################################################################
 # Create a non-root user and give it passwordless sudo and SSH login
 ###############################################################################
+ARG TEST_USER=tester
+
 RUN set -xe; \
     if [ -n "${TEST}${DEV}" ]; then \
       adduser ${TEST_USER} --shell /bin/bash; \
