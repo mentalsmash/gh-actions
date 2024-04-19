@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import subprocess
-from pathlib import Path
-
 from action_helpers.write_output import write_output
 from action_helpers.action_runner import action_runner
 from action_helpers.git_ref_vars import git_ref_vars
