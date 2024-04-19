@@ -18,12 +18,12 @@ from action_helpers.docker_registry_from_tag import docker_registry_from_tag
 from action_helpers.project_config import project_config
 
 def configure(clone_dir: str, github: str) -> None:
-  cfg = project_config(clone_dir, github)
+  cfg, github = project_config(clone_dir, github)
 
   tag = {
     "tag": f"latest{cfg.release.tag_suffix}",
     "branch": f"nightly{cfg.release.tag_suffix}",
-  }[cfg.github.ref_type]
+  }[github.ref_type]
 
   prerel_registry = docker_registry_from_tag(cfg.release.prerelease_tag)
   prerel_image = f"{cfg.release.prerelease_tag}:{tag}"
@@ -31,12 +31,12 @@ def configure(clone_dir: str, github: str) -> None:
   badge_version = {
     "tag": cfg.release.badge.stable.version,
     "branch": cfg.release.badge.nightly.version,
-  }[cfg.github.ref_type]
+  }[github.ref_type]
   
   badge_base_img = {
     "tag": cfg.release.badge.stable.base_image,
     "branch": cfg.release.badge.nightly.base_image,
-  }[cfg.github.ref_type]
+  }[github.ref_type]
 
   build_platforms = ",".join(cfg.release.build_platforms)
   test_platforms = ",".join('"'+plat+'"' for plat in cfg.release.build_platforms)
@@ -49,7 +49,7 @@ def configure(clone_dir: str, github: str) -> None:
     *([
         f"type=raw,value={tag},priority=650",
         "type=ref,event=branch",
-      ] if cfg.github.ref_type == "branch" else []),
+      ] if github.ref_type == "branch" else []),
   ])
 
   docker_flavor_config = f"suffix={cfg.release.tag_suffix},onlatest=true"

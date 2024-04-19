@@ -21,7 +21,7 @@ from typing import NamedTuple
 
 def project_config(
     clone_dir: str,
-    github: str) -> NamedTuple:
+    github: str) -> tuple[NamedTuple, NamedTuple]:
   def _dict_to_ntuple(key: str, val: dict) -> NamedTuple:
     fields = {}
     for k, v in val.items():
@@ -35,8 +35,8 @@ def project_config(
     val_cls = namedtuple(key, keys)
     return val_cls(**fields)
 
-  return _dict_to_ntuple("result", {
-    "settings": yaml.safe_load(
-      Path(f"{clone_dir}/project.yml").read_text()),
-    "github": yaml.safe_load(github),
-  })
+  settings = yaml.safe_load(
+    Path(f"{clone_dir}/project.yml").read_text())
+  github = yaml.safe_load(github)
+
+  return settings, github
