@@ -36,7 +36,7 @@ env:
   CLONE_DIR: src/repo
   DOCKERFILE: docker/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
-  LOCAL_TESTER_RESULTS: test-results/**
+  LOCAL_TESTER_RESULTS: test-results
   # Assumption: BASE_TESTER_TAG is private/internal and requires login
   LOGIN_GITHUB: 'y'
   LOGIN_DOCKERHUB: ''
@@ -150,7 +150,8 @@ jobs:
 
       - name: Run tests
         run: |
-          echo "Testing generated image..."
+          mkdir -p ${LOCAL_TESTER_RESULTS}}
+          echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
         env:
           DEBUG: ${{ runner.debug }}
 
@@ -159,5 +160,5 @@ jobs:
         if: always()
         with:
           name: ${{ needs.config.outputs.TEST_ARTIFACT }}
-          path: ${{ env.LOCAL_TESTER_RESULTS }}
+          path: ${{ env.LOCAL_TESTER_RESULTS }}/**
 
