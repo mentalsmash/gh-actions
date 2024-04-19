@@ -74,13 +74,6 @@ code-check:
 	@echo "Validating $(REPO)'s code changes..."
 	# [IMPLEMENTME] Trigger code validation.
 
-# Validate generated Debian package
-debtest:
-	@echo "Running test for Debian build of $(REPO) with image $(TEST_IMAGE)..."
-	mkdir -p ${LOCAL_TESTER_RESULTS}
-	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
-	# [IMPLEMENTME] Trigger tests to validate Debian build
-
 # Build uno's debian packages.
 # Requires the Debian Builder image.
 debuild:
@@ -110,6 +103,13 @@ test-ci:
 	mkdir -p ${LOCAL_TESTER_RESULTS}
 	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
 	# [IMPLEMENTME] Trigger tests to validate CI build
+
+# Run tests for Debian build
+test-deb:
+	@echo "Running test for Debian build of $(REPO) with image $(TEST_IMAGE)..."
+	mkdir -p ${LOCAL_TESTER_RESULTS}
+	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+	# [IMPLEMENTME] Trigger tests to validate Debian build
 
 # Run tests for a Release build
 test-release:

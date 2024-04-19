@@ -174,7 +174,7 @@ jobs:
 
     - name: Run tests
       run: |
-        make -C ${{ env.CLONE_DIR}} debtest
+        make -C ${{ env.CLONE_DIR}} test-deb
       env:
         DEBUG: ${{ runner.debug }}
         TEST_IMAGE: ${{ env.LOCAL_TESTER_IMAGE }}
@@ -184,6 +184,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ needs.config.outputs.TEST_ARTIFACT }}
-        path: ${{ env.LOCAL_TESTER_RESULTS }}/*
+        path: ${{ env.LOCAL_TESTER_RESULTS }}/**
       if: always()
 
