@@ -54,7 +54,9 @@ jobs:
           from action_helpers.workflows.release_push import configure
 
           configure(
-            release_tags="${{inputs.release-tags}}",
+            release_tags="""\
+              ${{inputs.release-tags}}
+            """,
             test_tag_registry="${{inputs.test-tag-registry}}",
           )
 
