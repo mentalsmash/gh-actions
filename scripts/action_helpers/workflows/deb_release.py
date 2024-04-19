@@ -16,7 +16,7 @@
 from action_helpers.write_output import write_output
 
 def configure(
-    deb_artifact_prefix: str,
+    deb_artifacts_prefix: str,
     deb_platforms: str,
     deb_images: str,
     event_name: str,
@@ -31,6 +31,6 @@ def configure(
     "DEB_BUILD": deb_build,
     "DEB_IMAGES": deb_images,
     "DEB_PLATFORMS": deb_platforms,
-    "DEB_ARTIFACTS_PREFIX": deb_artifact_prefix,
+    "DEB_ARTIFACTS_PREFIX": deb_artifacts_prefix,
   })
 
