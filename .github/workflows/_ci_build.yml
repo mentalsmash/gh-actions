@@ -45,7 +45,7 @@ jobs:
       BASE_TESTER_IMAGE: ${{ steps.config.outputs.BASE_TESTER_IMAGE }}
       LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
       LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
-      RUNNER: ${{ fromJson(steps.config.outputs.RUNNER) }}
+      RUNNER: ${{ steps.config.outputs.RUNNER }}
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
