@@ -33,7 +33,7 @@ def configure(
   base_image_tag = base_image.replace(":", "-")
   base_tester_image = f"{base_tester_tag}:{base_image_tag}"
   test_date = current_timestamp()
-  test_id = f"ci-{build_platform_label}__${build_version}"
+  test_id = f"ci-{build_platform_label}__{build_version}"
   test_artifact = f"{repository_name}-test-{test_id}__{test_date}"
 
   login_github = base_tester_image.startswith("ghcr.io/")
