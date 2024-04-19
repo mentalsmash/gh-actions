@@ -87,10 +87,10 @@ jobs:
     needs: config
     runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
     steps:
-    - name: Clone uno
+    - name: Clone source repository
       uses: actions/checkout@v4
       with:
-        path: src/uno
+        path: ${{ env.CLONE_DIR }}
         submodules: true
 
     - name: Log in to GitHub
@@ -102,8 +102,8 @@ jobs:
 
     - name: Build debian packages
       run: |
-        make -C src/uno changelog
-        make -C src/uno debuild
+        make -C ${{ env.CLONE_DIR }} changelog
+        make -C ${{ env.CLONE_DIR }} debuild
       env:
         DEB_BUILDER: ${{ needs.config.outputs.DEB_BUILDER }}
   
