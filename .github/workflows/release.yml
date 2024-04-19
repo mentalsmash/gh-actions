@@ -19,36 +19,9 @@ permissions:
   packages: write
 
 env:
-  # [IMPLEMENTME] Configure variables
-  #############################################################################
-  # Generated image settings
-  #############################################################################
-  # Base image for the pre-release image
-  BASE_TAG: ubuntu:22.04
-  # Build platforms for the pre-release and final images
-  BUILD_PLATFORMS: linux/amd64,linux/arm64
-  # Push pre-release image to GitHub for testing
-  PRERELEASE_TAG: ghcr.io/${{ github.repository }}-test
-  # Image tag for the final release image.
-  # Published to both GitHub and DockerHub
-  RELEASE_TAGS: |
-    ghcr.io/${{github.repository}}
-    ${{github.repository}}
-  # Add an arbitrary suffix to the image tags
-  TAG_SUFFIX: ''
-  #############################################################################
-  # Release badges settings
-  #############################################################################
-  # Gist IDs for the JSON objects backing release badges
-  BADGE_NIGHTLY_BASE_IMG: "1fd45f442b8ab91bef6ef56423368128"
-  BADGE_NIGHTLY_VERSION:  "9653c15d4e5b0413fb71397e643ab822"
-  BADGE_STABLE_BASE_IMG:  "6391e3a762e26c822281b1dbf2af5bd1"
-  BADGE_STABLE_VERSION:   "2fda06b2047d0643d91308462197110a"
-  #############################################################################
-  # Local workflow settings 
-  #############################################################################
   # Local directory where to clone the repository
   CLONE_DIR: src/repo
+
 jobs:
   config:
     runs-on: ubuntu-latest
@@ -99,21 +72,13 @@ jobs:
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
           from action_helpers.workflows.release import configure
-          
+
           configure(
-            badge_nightly_base_image="${{env.BADGE_NIGHTLY_BASE_IMG}}",
-            badge_nightly_version="${{env.BADGE_NIGHTLY_VERSION}}",
-            badge_stable_base_image="${{env.BADGE_STABLE_VERSION}}",
-            badge_stable_version="${{env.BADGE_STABLE_VERSION}}",
-            build_platforms="${{env.BUILD_PLATFORMS}}",
-            base_tag="${{env.BASE_TAG}}",
-            prerelease_tag="${{env.PRERELEASE_TAG}}",
-            ref_type="${{github.ref_type}}",
-            release_tags="""\
-              ${{env.RELEASE_TAGS}}
-            """,
-            tag_suffix="${{env.TAG_SUFFIX}}")
-  
+            clone_dir="${{ env.CLONE_DIR }}"
+            github="""\
+              ${{ toJson(github) }}
+            """)
+
   build:
     needs: config
     uses: ./.github/workflows/_release_build.yml

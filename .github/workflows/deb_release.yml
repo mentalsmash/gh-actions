@@ -18,16 +18,13 @@ permissions:
 env:
   # [IMPLEMENTME] Configure variables
   CLONE_DIR: src/repo
-  DEB_IMAGES: '["ubuntu:22.04"]'
-  DEB_PLATFORMS: '["amd64", "arm64"]'
-  DEB_ARTIFACTS_PREFIX: mentalsmash-ref-project-debdocker-deb-
 
 jobs:
   check-trigger:
     runs-on: ubuntu-latest
     outputs:
       DO_BUILD: ${{steps.config.outputs.DO_BUILD}}
-      DEB_IMAGES: ${{steps.config.outputs.DEB_IMAGES}}
+      DEB_BASE_IMAGES: ${{steps.config.outputs.DEB_BASE_IMAGES}}
       DEB_PLATFORMS: ${{steps.config.outputs.DEB_PLATFORMS}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
@@ -46,16 +43,12 @@ jobs:
           from action_helpers.workflows.deb_release import configure
 
           configure(
-            deb_artifacts_prefix="${{ env.DEB_ARTIFACTS_PREFIX }}",
-            deb_images="""\
-              ${{ env.DEB_IMAGES }}
-            """,
-            deb_platforms="""\
-              ${{ env.DEB_PLATFORMS }}
-            """,
-            event_name="${{ github.event_name }}",
-            ref_name="${{ github.ref_name }}",
-            ref_type="${{ github.ref_type }}")
+            event_action="${{github.event.action}}",
+            event_name="${{github.event_name}}",
+            ref_type="${{github.ref_type}}",
+            ref_name="${{github.ref_name}}",
+            repository="${{github.repository}}")
+
       - name: "Fail if upstream job failed"
         run: |
           echo "upstream job for ${{github.ref_type}} ${{github.ref_name}} failed with conclusion '${{github.event.workflow_run.conclusion}}'"
@@ -67,7 +60,7 @@ jobs:
     if: needs.check-trigger.outputs.DO_BUILD
     strategy:
       matrix:
-        base-tag: ${{ fromJson(needs.check-trigger.outputs.DEB_IMAGES ) }}
+        base-tag: ${{ fromJson(needs.check-trigger.outputs.DEB_BASE_IMAGES ) }}
         platform: ${{ fromJson(needs.check-trigger.outputs.DEB_PLATFORMS) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit

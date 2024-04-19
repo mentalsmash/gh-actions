@@ -29,12 +29,6 @@ permissions:
 
 env:
   CLONE_DIR: src/repo
-  # [IMPLEMENTME] If you change these values, make sure to update
-  # full-validation.strategy.matrix.excluded.
-  BASIC_VALIDATION_PLATFORMS: '["amd64"]'
-  BASIC_VALIDATION_BASE_IMAGES: '["ubuntu:22.04"]'
-  FULL_VALIDATION_PLATFORMS: '["amd64", "arm64"]'
-  FULL_VALIDATION_BASE_IMAGES: '["ubuntu:22.04"]'
 
 jobs:
   check-trigger:

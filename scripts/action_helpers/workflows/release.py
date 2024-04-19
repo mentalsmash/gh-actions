@@ -15,41 +15,31 @@
 ###############################################################################
 from action_helpers.write_output import write_output
 from action_helpers.docker_registry_from_tag import docker_registry_from_tag
+from action_helpers.project_config import project_config
 
-def configure(
-  badge_nightly_base_image: str,
-  badge_nightly_version: str,
-  badge_stable_base_image: str,
-  badge_stable_version: str,
-  base_tag: str,
-  build_platforms: str,
-  prerelease_tag: str,
-  ref_type: str,
-  release_tags: str,
-  tag_suffix: str,
-) -> None:
+def configure(clone_dir: str, github: str) -> None:
+  cfg = project_config(clone_dir, github)
+
   tag = {
-    "tag": f"latest{tag_suffix}",
-    "branch": f"nightly{tag_suffix}",
-  }[ref_type]
+    "tag": f"latest{cfg.release.tag_suffix}",
+    "branch": f"nightly{cfg.release.tag_suffix}",
+  }[cfg.github.ref_type]
 
-  prerel_registry = docker_registry_from_tag(prerelease_tag)
-  prerel_image = f"{prerelease_tag}:{tag}"
+  prerel_registry = docker_registry_from_tag(cfg.release.prerelease_tag)
+  prerel_image = f"{cfg.release.prerelease_tag}:{tag}"
 
   badge_version = {
-    "tag": badge_stable_version,
-    "branch": badge_nightly_version,
-  }[ref_type]
+    "tag": cfg.release.badge.stable.version,
+    "branch": cfg.release.badge.nightly.version,
+  }[cfg.github.ref_type]
   
   badge_base_img = {
-    "tag": badge_stable_base_image,
-    "branch": badge_nightly_base_image,
-  }[ref_type]
+    "tag": cfg.release.badge.stable.base_image,
+    "branch": cfg.release.badge.nightly.base_image,
+  }[cfg.github.ref_type]
 
-  test_platforms = ",".join((
-    '"' + platform + '"'
-    for platform in build_platforms.split(",")
-  ))
+  build_platforms = ",".join(cfg.release.build_platforms)
+  test_platforms = ",".join('"'+plat+'"' for plat in cfg.release.build_platforms)
   test_platforms = f"[{test_platforms}]"
 
   docker_tags_config = "\n".join([
@@ -59,22 +49,21 @@ def configure(
     *([
         f"type=raw,value={tag},priority=650",
         "type=ref,event=branch",
-      ] if ref_type == "branch" else []),
+      ] if cfg.github.ref_type == "branch" else []),
   ])
 
-  release_tags = "\n".join([
-    tag.strip()
-    for tag in release_tags.strip().splitlines()
-  ])
+  docker_flavor_config = f"suffix={cfg.release.tag_suffix},onlatest=true"
+
+  release_tags = "\n".join(cfg.release.release_tags)
 
   write_output({
     "BADGE_BASE_IMG": badge_base_img,
     "BADGE_VERSION": badge_version,
-    "BASE_TAG": base_tag,
+    "BASE_TAG": cfg.release.base_tag,
     "DOCKER_BUILD_PLATFORMS": build_platforms,
     "DOCKER_TAGS_CONFIG": docker_tags_config,
-    "DOCKER_FLAVOR_CONFIG": f"suffix={tag_suffix},onlatest=true",
-    "PRERELEASE_TAG": prerelease_tag,
+    "DOCKER_FLAVOR_CONFIG": docker_flavor_config,
+    "PRERELEASE_TAG": cfg.release.prerelease_tag,
     "PRERELEASE_IMAGE": prerel_image,
     "PRERELEASE_REGISTRY": prerel_registry,
     "RELEASE_TAGS": release_tags,
