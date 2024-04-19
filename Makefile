@@ -77,7 +77,7 @@ code-check:
 debtest:
 	@echo "Running test for Debian build of $(REPO) with image $(TEST_IMAGE)..."
 	mkdir -p ${LOCAL_TESTER_RESULTS}
-  echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
 	# [IMPLEMENTME] Trigger tests to validate Debian build
 
 # Build uno's debian packages.
@@ -107,14 +107,14 @@ install:
 test-ci:
 	@echo "Running test for CI build of $(REPO)..."
 	mkdir -p ${LOCAL_TESTER_RESULTS}
-  echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
 	# [IMPLEMENTME] Trigger tests to validate CI build
 
 # Run tests for a Release build
 test-release:
 	@echo "Running test for Release build of $(REPO)..."
 	mkdir -p ${LOCAL_TESTER_RESULTS}
-  echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+	echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
 	# [IMPLEMENTME] Trigger tests to validate release build
 
 # Generate upstream archive for Debian packaging

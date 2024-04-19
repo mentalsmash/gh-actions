@@ -1,0 +1,6 @@
+test-results
+dist
+debian-dist
+build
+debian/tmp
+
