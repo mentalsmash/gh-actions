@@ -16,23 +16,29 @@
 import shlex
 from pathlib import Path
 import os
-def write_output(vars: dict[str, object] | None = None, export_env: list[str] | None = None):
+def write_output(vars: dict[str, bool | str | int] | None = None, export_env: list[str] | None = None):
   """Helper function to write variables to GITHUB_OUTPUT.
   
   Optionally, re-export environment variables so that they may be
   accessed from jobs.<job_id>.with.<with_id>, and other contexts
   where the env context is not available
   """
-  def _output(var: str, val: object):
+  def _output(var: str, val: bool | str | int):
+    assert isinstance(val, (bool,  str, int)), f"unsupported output value type: {var} = {val.__class__}"
     if isinstance(val, bool):
       # Normalize booleans to non-empty/empty strings
       # Use lowercase variable name for easier debugging
       val = var.lower() if val else ''
-    qval = shlex.quote(val)
-    print(f"OUTPUT [{var}]: {qval}")
+    elif not isinstance(val, str):
+      val = str(val)
+    # Quote non empty strings
+    if val:
+      val = shlex.quote(val)
+    print(f"OUTPUT [{var}]: {val}")
     output.write(var)
     output.write("=")
-    output.write(qval)
+    if val:
+      output.write(val)
     output.write("\n")
     # output.write(f"{var}<<EOF""\n")
     # output.write(str(val))
