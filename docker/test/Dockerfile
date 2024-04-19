@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.licenses=Apache-2.0
 LABEL org.opencontainers.image.vendor="John Doe"
 
 # Name of non-root user created for testing
-ARG TEST_USER="tester"
+ARG TEST_USER=tester
 
 # Enable DEV mode
 ARG DEV=

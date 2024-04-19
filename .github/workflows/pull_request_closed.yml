@@ -1,0 +1,68 @@
+name: Pull Request (Closed)
+run-name: |
+  PR #${{github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr-number}} [closed, ${{ ((github.event_name == 'pull_request' && github.event.pull_request.merged) || inputs.pr-merged) && 'merged' || 'rejected' }}${{ github.event_name != 'pull_request' && ', manual trigger' || '' }}] ${{github.event_name == 'pull_request' && github.event.pull_request.title || ''}}
+
+on:
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: "PR #"
+        type: number
+        required: true
+      pr-merged:
+        description: "Merged"
+        type: boolean
+        default: true
+
+concurrency:
+  group: pr-closed-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr-number }}
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  packages: read
+
+env:
+  CLONE_DIR: src/repo
+  ADMIN_IMAGE: ghcr.io/${{ github.repository }}-admin:latest
+
+jobs:
+  cleanup_jobs:
+    runs-on: ubuntu-latest
+    # Run automatically only if the PR is from this repository,
+    # otherwise it won't be authorized to delete workflow runs.
+    # (suggested by https://github.com/orgs/community/discussions/25217)
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Log in to GitHub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Clean up workflow runs"
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -e GH_TOKEN=${GH_TOKEN} \
+            -w /workspace \
+            ${ADMIN_IMAGE} \
+            ${{ env.CLONE_DIR }}/scripts/ci-admin \
+              -c ${{ github.run_id }} \
+              pr-closed \
+              -r ${{ github.repository }} \
+              -N ${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr-number }} \
+              ${{ (github.event_name == 'pull_request' && github.event.pull_request.merged || inputs.pr-merged) && '-m' || '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

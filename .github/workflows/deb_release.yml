@@ -1,18 +1,11 @@
 name: Deb Release
 run-name: |
-  deb release [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}${{github.ref_type == 'branch' && '@' || ''}}${{github.ref_type == 'branch' && github.sha || ''}}]
+  deb release [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
 
 on:
   workflow_dispatch:
 
-  push:
-    tags:
-      - '*'
-      - '!*/**'
-
-  workflow_run:
-    workflows: ["Release"]
-    types: [completed]
+  workflow_call:
 
 concurrency:
   group: deb-release-${{ github.ref }}
@@ -24,6 +17,7 @@ permissions:
 
 env:
   # [IMPLEMENTME] Configure variables
+  CLONE_DIR: src/repo
   DEB_IMAGES: '["ubuntu:22.04"]'
   DEB_PLATFORMS: '["amd64", "arm64"]'
   DEB_ARTIFACTS_PREFIX: mentalsmash-ref-project-debdocker-deb-
@@ -37,21 +31,26 @@ jobs:
       DEB_PLATFORMS: ${{steps.config.outputs.DEB_PLATFORMS}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
       - name: "Generate test configuration"
         id: config
         run: |
-          if [ \( "${{github.event_name}}" = workflow_run -a "${{github.ref_name}}" = master \) \
-                -o "${{github.ref_type}}" = tag ]; then
-            do_build=y
-          fi
-          (
-            echo DO_BUILD=${do_build}
-            echo DEB_PLATFORMS='${{ env.DEB_PLATFORMS }}'
-            echo DEB_IMAGES='${{ env.DEB_IMAGES }}'
-            echo 'DEB_ARTIFACTS_PREFIX<<EOF'
-            echo "${{ env.DEB_ARTIFACTS_PREFIX }}"
-            echo EOF
-          ) >> ${GITHUB_OUTPUT}
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers.workflows.deb_release import configure
+
+          configure(
+            deb_artifacts_prefix="${{ env.DEB_ARTIFACTS_PREFIX }}",
+            deb_images="${{ env.DEB_IMAGES }}",
+            deb_platforms="${{ env.DEB_PLATFORMS }}",
+            event_name="${{ github.event_name }}",
+            ref_name="${{ github.ref_name }}",
+            ref_type="${{ github.ref_type }}")
       - name: "Fail if upstream job failed"
         run: |
           echo "upstream job for ${{github.ref_type}} ${{github.ref_name}} failed with conclusion '${{github.event.workflow_run.conclusion}}'"

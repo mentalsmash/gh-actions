@@ -165,3 +165,9 @@ jobs:
       badge-version: ${{ needs.config.outputs.BADGE_VERSION }}
       badge-base-img: ${{ needs.config.outputs.BADGE_BASE_IMG }}
 
+  deb_release:
+    needs:
+      - config
+      - test
+    uses: ./.github/workflows/deb_release.yml
+    secrets: inherit

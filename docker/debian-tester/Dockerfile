@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=ubuntu:22.04
 FROM ${BASE_IMAGE}
 
-ARG TEST_USER=uno
+ARG TEST_USER=tester
 
 RUN set -xe; \
     # Install packages required by tests
