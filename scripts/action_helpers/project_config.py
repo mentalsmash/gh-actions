@@ -30,10 +30,10 @@ def project_config(
       k = k.replace("-", "_")
       fields[k] = v
     
-    keys = list(val.keys())
+    keys = list(fields.keys())
     print("DEFINING TUPLE:", key, keys)
     val_cls = namedtuple(key, keys)
-    return val_cls(**val)
+    return val_cls(**fields)
 
   return _dict_to_ntuple("result", {
     "settings": yaml.safe_load(
