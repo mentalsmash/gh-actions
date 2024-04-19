@@ -22,6 +22,9 @@ platforms (e.g. Windows), or distribution methods (e.g. other packaging formats)
 
   - Every release is assigned a 3-components label `<major>.<minor>.<patch>`.
 
+  - Every release is uniquely associated with a `git` tag of the same name referencing a
+    commit from the **main development branch**.
+
 - New releases are triggered automatically by changes in the repository:
 
   - **Nightly** releases are automatically triggered every time new commits are pushed
@@ -85,20 +88,20 @@ platforms (e.g. Windows), or distribution methods (e.g. other packaging formats)
   
     - A **basic validation**, which is triggered every time a new PR is opened, or whenever an
       existing PR is updated (by new commits, or by transitioning to "ready for review" state
-      if opened as draft). The basic validation will build and test an image
-      for a selected reference platform (`linux/amd64`),
+      if opened as draft). The basic validation is expected to build and test the project's image
+      for a selected reference platform (e.g. `linux/amd64`).
   
     - A **full validation**, which is triggered every time a PR transitions to the "accepted"
-      review state. The full validation will build and test images for other targeted platforms
-      (`linux/arm64`), and it will also validate the changes by running the Debian release
-      workflow on a reference platform (`linux/amd64`).
+      review state. The full validation is expected to build and test the project's image for other
+      targeted platforms (e.g. `linux/arm64`). It is also expected validate the changes by running
+      the Debian release workflow on a reference platform (e.g. `linux/amd64`).
 
-  - The workflow runs associated with a PR will be automatically pruned once the PR is closed:
+  - All workflow runs associated with a PR will be automatically pruned once the PR is closed:
 
     - If the PR was closed without merging, all runs will be deleted.
 
     - If the PR was merged, all runs will be deleted except for the most recent "basic validation",
-      and the most recent "full validation".
+      and "full validation" runs.
 
 ## Project Bootstrap Guide
 
