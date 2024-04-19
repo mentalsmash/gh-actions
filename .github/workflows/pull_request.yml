@@ -67,7 +67,7 @@ jobs:
             clone_dir="${{ env.CLONE_DIR }}",
             pr_no=${{ github.event.pull_request.number }},
             event_name="${{ github.event_name }}",
-            event_action="${{ github.event.action }}"
+            event_action="${{ github.event.action }}",
             is_draft=bool("${{ github.event.pull_request.draft && 'True' || '' }}"),
             review_state="${{ github.event_name == 'pull_ request' &&  github.event.review.state || ''}}",
           )
