@@ -29,13 +29,13 @@ def configure(clone_dir: str, github: str) -> None:
   prerel_image = f"{cfg.release.prerelease_tag}:{tag}"
 
   badge_version = {
-    "tag": cfg.release.badge.stable.version,
-    "branch": cfg.release.badge.nightly.version,
+    "tag": cfg.release.badges.stable.version,
+    "branch": cfg.release.badges.nightly.version,
   }[github.ref_type]
   
   badge_base_img = {
-    "tag": cfg.release.badge.stable.base_image,
-    "branch": cfg.release.badge.nightly.base_image,
+    "tag": cfg.release.badges.stable.base_image,
+    "branch": cfg.release.badges.nightly.base_image,
   }[github.ref_type]
 
   build_platforms = ",".join(cfg.release.build_platforms)
