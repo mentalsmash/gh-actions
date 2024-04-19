@@ -150,7 +150,7 @@ jobs:
 
       - name: Run tests
         run: |
-          mkdir -p ${LOCAL_TESTER_RESULTS}}
+          mkdir -p ${LOCAL_TESTER_RESULTS}
           echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
         env:
           DEBUG: ${{ runner.debug }}
