@@ -9,9 +9,9 @@ make -C ${BUILD_DIR} tarball
 (cd ${BUILD_DIR} && debuild)
 mkdir -p ${BUILD_DIR}/debian-dist
 mv -v \
- ${BUILD_DIR}/../uno*.deb \
- ${BUILD_DIR}/../uno*.debian.tar.xz \
- ${BUILD_DIR}/../uno*.dsc \
- ${BUILD_DIR}/../uno*.changes \
- ${BUILD_DIR}/../uno*.orig.tar.xz \
+ ${BUILD_DIR}/../${PKG_NAME}*.deb \
+ ${BUILD_DIR}/../${PKG_NAME}*.debian.tar.xz \
+ ${BUILD_DIR}/../${PKG_NAME}*.dsc \
+ ${BUILD_DIR}/../${PKG_NAME}*.changes \
+ ${BUILD_DIR}/../${PKG_NAME}*.orig.tar.xz \
  ${BUILD_DIR}/debian-dist/
