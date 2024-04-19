@@ -15,18 +15,35 @@
 ###############################################################################
 from pathlib import Path
 import os
-def write_output(vars: dict[str, object] | None = None, export_env: list[str] | None = None):
+def write_output(vars: dict[str, bool | str | int | None] | None = None, export_env: list[str] | None = None):
   """Helper function to write variables to GITHUB_OUTPUT.
   
   Optionally, re-export environment variables so that they may be
   accessed from jobs.<job_id>.with.<with_id>, and other contexts
   where the env context is not available
   """
-  def _output(var: str, val: object):
-    output.write(f"{var}<<EOF""\n")
-    output.write(str(val))
-    output.write("\n")
-    output.write("EOF\n")
+  def _output(var: str, val: bool | str | int | None):
+    assert val is None or isinstance(val, (bool,  str, int)), f"unsupported output value type: {var} = {val.__class__}"
+    if val is None:
+      val = ""
+    elif isinstance(val, bool):
+      # Normalize booleans to non-empty/empty strings
+      # Use lowercase variable name for easier debugging
+      val = var.lower() if val else ""
+    elif not isinstance(val, str):
+      val = str(val)
+    print(f"OUTPUT [{var}]: {val}")
+    if "\n" not in val:
+      output.write(var)
+      output.write("=")
+      if val:
+        output.write(val)
+      output.write("\n")
+    else:
+      output.write(f"{var}<<EOF""\n")
+      output.write(val)
+      output.write("\n")
+      output.write("EOF\n")
   github_output = Path(os.environ["GITHUB_OUTPUT"])
   with github_output.open("a") as output:
     for var in (export_env or []):

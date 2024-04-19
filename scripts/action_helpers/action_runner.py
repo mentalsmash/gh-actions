@@ -14,6 +14,9 @@
 # limitations under the License.
 ###############################################################################
 def action_runner(platform: str) -> str:
+  # Normalize build platform, assume linux by default
+  if "/" not in platform:
+    platform = f"linux/{platform}"
   if platform == "linux/arm64":
     return '["self-hosted", "linux", "arm64"]'
   elif platform == "linux/amd64":

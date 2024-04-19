@@ -26,9 +26,7 @@ env:
   # [IMPLEMENTME] Configure variables
   DEB_IMAGES: '["ubuntu:22.04"]'
   DEB_PLATFORMS: '["amd64", "arm64"]'
-  DEB_ARTIFACTS: |
-    ref-project-debdocker-deb-*-amd64__*/*.deb
-    ref-project-debdocker-deb-*-arm64__*/*.deb
+  DEB_ARTIFACTS: mentalsmash-ref-project-debdocker-deb-*/*.deb
 
 jobs:
   check-trigger:

@@ -17,11 +17,12 @@ from action_helpers.write_output import write_output
 from action_helpers.git_ref_vars import git_ref_vars
 from action_helpers.action_runner import action_runner
 from action_helpers.current_timestamp import current_timestamp
+from action_helpers.extract_registries import extract_registries
 
 def configure(
     base_image: str,
-    base_tester_tag: str,
     build_platform: str,
+    ci_tester_tag: str,
     clone_dir: str,
     ref_name: str,
     ref_type: str,
@@ -31,18 +32,17 @@ def configure(
   repository_name = repository.replace("/", "-")
   build_platform_label = build_platform.replace("/", "-")
   base_image_tag = base_image.replace(":", "-")
-  base_tester_image = f"{base_tester_tag}:{base_image_tag}"
+  ci_tester_image = f"{ci_tester_tag}:{base_image_tag}"
   test_date = current_timestamp()
-  test_id = f"ci-{build_platform_label}__${build_version}"
+  test_id = f"ci-{build_platform_label}__{build_version}"
   test_artifact = f"{repository_name}-test-{test_id}__{test_date}"
 
-  login_github = base_tester_image.startswith("ghcr.io/")
-  login_dockerhub = not login_github
+  registries = extract_registries([ci_tester_image])
 
   write_output({
-    "BASE_TESTER_IMAGE": base_tester_image,
-    "LOGIN_GITHUB": login_github,
-    "LOGIN_DOCKERHUB": login_dockerhub,
+    "CI_TESTER_IMAGE": ci_tester_image,
+    "LOGIN_GITHUB": "github" in registries,
+    "LOGIN_DOCKERHUB": "dockerhub" in registries,
     "RUNNER": runner,
     "TEST_ARTIFACT": test_artifact,
     "TEST_ID": test_id,
