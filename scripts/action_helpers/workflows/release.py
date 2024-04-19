@@ -52,7 +52,7 @@ def configure(
   ))
   test_platforms = f"[{test_platforms}]"
 
-  docker_tags_config = [
+  docker_tags_config = "\n".join([
     "type=semver,pattern={{version}}",
     "type=semver,pattern={{major}}.{{minor}}",
     "type=semver,pattern={{major}}",
@@ -60,7 +60,7 @@ def configure(
         f"type=raw,value={tag},priority=650",
         "type=ref,event=branch",
       ] if ref_type == "branch" else []),
-  ]
+  ])
 
   release_tags = "\n".join([
     tag.strip()
