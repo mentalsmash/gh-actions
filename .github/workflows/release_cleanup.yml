@@ -18,7 +18,8 @@ permissions:
   packages: read
 
 env:
-  CLONE_DIR: src/uno
+  CLONE_DIR: src/repo
+  ADMIN_IMAGE: ghcr.io/${{ github.repository }}-admin:latest
 
 jobs:
   cleanup_jobs:
@@ -44,5 +45,4 @@ jobs:
               -r ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ADMIN_IMAGE: ghcr.io/mentalsmash/uno-ci-admin:latest
 

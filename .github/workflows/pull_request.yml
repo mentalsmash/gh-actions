@@ -69,7 +69,7 @@ jobs:
             event_name="${{ github.event_name }}",
             event_action="${{ github.event.action }}",
             is_draft=bool("${{ github.event.pull_request.draft && 'True' || '' }}"),
-            review_state="${{ github.event_name == 'pull_ request' &&  github.event.review.state || ''}}",
+            review_state="${{ github.event_name == 'pull_request_review' &&  github.event.review.state || ''}}",
           )
 
   basic-validation:
