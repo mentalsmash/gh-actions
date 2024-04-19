@@ -56,7 +56,7 @@ def configure(
     #      (assumption: a basic validation was already performed on the `pull_request_review`
     #       event for the approval.)
     print(f"PR {pr_no} updated ({event_action})")
-    if event_action in ("opened", "synchronized"):
+    if event_action in ("opened", "synchronize"):
       result_basic = True
     elif event_action == "ready_for_review":
       # (assumption: if the PR is not "mergeable" it must have not been approved.
