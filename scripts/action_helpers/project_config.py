@@ -35,8 +35,9 @@ def project_config(
     val_cls = namedtuple(key, keys)
     return val_cls(**fields)
 
-  settings = yaml.safe_load(
-    Path(f"{clone_dir}/project.yml").read_text())
-  github = yaml.safe_load(github)
+  settings = _dict_to_ntuple(
+    "settings",
+    yaml.safe_load(Path(f"{clone_dir}/project.yml").read_text()))
+  github = _dict_to_ntuple("github", yaml.safe_load(github))
 
   return settings, github
