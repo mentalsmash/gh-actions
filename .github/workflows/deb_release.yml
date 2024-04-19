@@ -39,6 +39,7 @@ jobs:
 
       - name: "Generate test configuration"
         id: config
+        shell: python
         run: |
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
