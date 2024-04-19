@@ -2,7 +2,8 @@
 # Global Project Configuration
 ###############################################################################
 # [IMPLEMENTME] Change project name
-REPO := mentalsmash/ref-project-debdocker
+PROJECT := ref-project-debdocker
+REPO := mentalsmash/$(PROJECT)
 # Local repo clone, assumed to be the current directory.
 REPO_DIR ?= $(shell pwd)
 # Directory where to perform local build operations/
@@ -87,7 +88,7 @@ debuild:
 		-v $(REPO_DIR)/:/repo \
 		-w /repo \
 		$(DEB_BUILDER)  \
-		/repo/scripts/debian/build.sh $(REPO) /repo
+		/repo/scripts/debian/build.sh $(PROJECT) /repo
 
 # Build images required for development and CI administration.
 dockerimages: \
