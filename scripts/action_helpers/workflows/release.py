@@ -30,7 +30,7 @@ def configure(
 ) -> None:
   tag = {
     "tag": f"latest{tag_suffix}",
-    "branch": f"branch{tag_suffix}",
+    "branch": f"nightly{tag_suffix}",
   }[ref_type]
 
   prerel_registry = docker_registry_from_tag(prerelease_tag)

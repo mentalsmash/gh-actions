@@ -19,19 +19,15 @@ permissions:
   packages: write
 
 env:
-  # Gist IDs for the JSON objects backing release badges
-  BADGE_NIGHTLY_BASE_IMG: "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_NIGHTLY_VERSION:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_STABLE_BASE_IMG:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_STABLE_VERSION:   "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  #############################################################################
+  # Generated image settings
+  #############################################################################
   # Base image for the pre-release image
   BASE_TAG: ubuntu:22.04
-  # Push pre-release image to GitHub for testing
-  PRERELEASE_TAG: ghcr.io/${{ github.repository }}-test
   # Build platforms for the pre-release and final images
   BUILD_PLATFORMS: linux/amd64,linux/arm64
-  # Local directory where to clone the repository
-  CLONE_DIR: src/repo
+  # Push pre-release image to GitHub for testing
+  PRERELEASE_TAG: ghcr.io/${{ github.repository }}-test
   # Image tag for the final release image.
   RELEASE_TAGS: |
     ghcr.io/${{github.repository}}
@@ -39,7 +35,19 @@ env:
   #   ${{github.repository}}
   # Add an arbitrary suffix to the image tags
   TAG_SUFFIX: ''
-
+  #############################################################################
+  # Release badges settings
+  #############################################################################
+  # Gist IDs for the JSON objects backing release badges
+  BADGE_NIGHTLY_BASE_IMG: "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  BADGE_NIGHTLY_VERSION:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  BADGE_STABLE_BASE_IMG:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  BADGE_STABLE_VERSION:   "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  #############################################################################
+  # Local workflow settings 
+  #############################################################################
+  # Local directory where to clone the repository
+  CLONE_DIR: src/repo
 jobs:
   config:
     runs-on: ubuntu-latest
