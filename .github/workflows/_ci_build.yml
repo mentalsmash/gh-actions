@@ -32,7 +32,7 @@ permissions:
   packages: read
 
 env:
-  BASE_TESTER_TAG: ubuntu:22.04
+  CI_TESTER_TAG: ghcr.io/${{ github.repository }}-ci-tester
   CLONE_DIR: src/repo
   DOCKERFILE: docker/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
@@ -42,7 +42,7 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      BASE_TESTER_IMAGE: ${{ steps.config.outputs.BASE_TESTER_IMAGE }}
+      CI_TESTER_IMAGE: ${{ steps.config.outputs.CI_TESTER_IMAGE }}
       LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
       LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
       RUNNER: ${{ steps.config.outputs.RUNNER }}
@@ -70,8 +70,8 @@ jobs:
 
           configure(
             base_image="${{ inputs.base-image }}",
-            base_tester_tag="${{ env.BASE_TESTER_TAG }}",
             build_platform="${{ inputs.build-platform }}",
+            ci_tester_tag="${{ env.CI_TESTER_TAG }}",
             clone_dir="${{ env.CLONE_DIR }}",
             ref_name="${{ github.ref_name }}",
             ref_type="${{ github.ref_type }}",
@@ -96,7 +96,7 @@ jobs:
         with:
           driver-opts: network=host
 
-        # Assumption: BASE_TESTER_TAG is private/internal and requires login
+        # Assumption: CI_TAG is private/internal and requires login
         # either on GitHub or DockerHub
       - name: Log in to GitHub
         if: needs.config.outputs.LOGIN_GITHUB
@@ -123,7 +123,7 @@ jobs:
           platforms: ${{ inputs.build-platform }}
           build-args: |
             TEST=y
-            BASE_IMAGE=${{ needs.config.outputs.BASE_TESTER_IMAGE }}
+            BASE_IMAGE=${{ needs.config.outputs.CI_TESTER_IMAGE }}
 
       - name: Run tests
         run: |

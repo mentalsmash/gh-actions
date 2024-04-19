@@ -16,10 +16,14 @@ permissions:
   contents: read
 
 jobs:
-  build_image_debian_builder:
+  build-image-debian-builder:
     uses: ./.github/workflows/image_build_debian_builder.yml
     secrets: inherit
 
-  build_image_admin:
+  build-image-ci-tester:
+    uses: ./.github/workflows/image_build_ci_tester.yml
+    secrets: inherit
+
+  build-image-admin:
     uses: ./.github/workflows/image_build_admin.yml
     secrets: inherit
