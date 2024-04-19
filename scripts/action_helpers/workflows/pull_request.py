@@ -30,9 +30,16 @@ def configure(
 
   review_state = review_state or ""
 
+  print(f"Configuring PR {pr_no} job:")
+  print(f"- draft: {is_draft}")
+  print(f"- event: {event_name}")
+  print(f"- action: {event_action}")
+  print(f"- review: {review_state}")
+
   if event_name == "pull_request_review" and review_state == "approved":
     # A new review was submitted, and the review state is "approved":
     # perform a full validation (ci build on more platforms + deb validation)
+    print(f"PR {pr_no} reviewed and approved", "" if not is_draft else "(still in draft)")
     result_full = True
     # perform a basic validation if the PR was approved while still in draft
     result_basic = is_draft
@@ -48,6 +55,7 @@ def configure(
     #   -> PR moved out of draft, run basic validation only if not already 'approved'.
     #      (assumption: a basic validation was already performed on the `pull_request_review`
     #       event for the approval.)
+    print(f"PR {pr_no} updated ({event_action})")
     if event_action in ("opened", "synchronized"):
       result_basic = True
     elif event_action == "ready_for_review":
@@ -64,6 +72,8 @@ def configure(
         "gh", "pr", "view", str(pr_no), "--json", "reviewDecision", "--jq", ".reviewDecision"
       ], cwd=clone_dir, stdout=subprocess.PIPE).stdout.decode().strip()
       result_basic = review_state != "approved"
+
+  print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}")
 
   write_output({
     "VALIDATE_FULL": result_full,
