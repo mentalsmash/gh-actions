@@ -20,6 +20,10 @@ def configure(
   release_tags: str,
   test_tag_registry: str,
 ) -> None:
+  release_tags = [
+    tag.strip()
+    for tag in release_tags.strip().splitlines()
+  ]
   registries = extract_registries(release_tags)
   registries.add(test_tag_registry)
   write_output({

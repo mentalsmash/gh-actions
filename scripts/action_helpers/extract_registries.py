@@ -20,5 +20,7 @@ def extract_registries(tags: list[str]) -> set[str]:
   for rel_tag in tags:
     registry = docker_registry_from_tag(rel_tag)
     registries.add(registry)
+  print("input tags", tags)
+  print("extracted registries:", registries)
   return registries
 
