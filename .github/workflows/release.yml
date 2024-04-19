@@ -74,7 +74,7 @@ jobs:
           from action_helpers.workflows.release import configure
 
           configure(
-            clone_dir="${{ env.CLONE_DIR }}"
+            clone_dir="${{ env.CLONE_DIR }}",
             github="""\
               ${{ toJson(github) }}
             """)
