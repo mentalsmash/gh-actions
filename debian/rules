@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+# Enable verbose output from dh
+export DH_VERBOSE = 1
+
+# Set locale to C.UTF-8 instead of default C
+LC_ALL := C.UTF-8
+export LC_ALL
+
+%:
+	dh $@
+

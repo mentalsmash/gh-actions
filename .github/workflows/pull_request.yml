@@ -29,8 +29,8 @@ permissions:
 
 env:
   CLONE_DIR: src/repo
-  # If you change these values, make sure to update
-  # full-validation.strategy.matrix.excluded 
+  # [IMPLEMENTME] If you change these values, make sure to update
+  # full-validation.strategy.matrix.excluded.
   BASIC_VALIDATION_PLATFORMS: '["amd64"]'
   BASIC_VALIDATION_BASE_IMAGES: '["ubuntu:22.04"]'
   FULL_VALIDATION_PLATFORMS: '["amd64", "arm64"]'
@@ -61,23 +61,16 @@ jobs:
         run: |
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers import *
+          from action_helpers.workflows.pull_request import configure
 
-          validate_full, validate_basic, test_not_needed = pull_request_validate_actions(
+          configure(
             clone_dir="${{ env.CLONE_DIR }}",
             pr_no=${{ github.event.pull_request.number }},
             event_name="${{ github.event_name }}",
             event_action"${{ github.event.action }}"
             is_draft=bool("${{ github.event.pull_request.draft && 'True' || '' }}"),
-            review_state="${{ github.event_name == 'pullrequest' &&  github.event.review.state || ''}}",
+            review_state="${{ github.event_name == 'pull_ request' &&  github.event.review.state || ''}}",
           )
-          write_output({
-            "VALIDATE_FULL": validate_full,
-            "VALIDATE_BASIC": validate_basic,
-          }, [
-            "BASIC_VALIDATION_PLATFORMS",
-            "BASIC_VALIDATION_BASE_IMAGES",
-          ])
 
   basic-validation:
     needs: check-trigger
@@ -86,7 +79,7 @@ jobs:
       matrix:
         build-platform: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_PLATFORMS) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BASE_IMAGES) }}
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/_ci_build.yml
     secrets: inherit
     with:
       build-platform: ${{matrix.build-platform}}
@@ -99,12 +92,26 @@ jobs:
       matrix:
         build-platform: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_PLATFORMS) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BASE_IMAGES) }}
-        # These values are "hard-coded" and must be updated manually here
+        # [IMPLEMENTME] These values are "hard-coded" and must be updated manually here
         exclude:
           - build-platform: amd64
             base-image: "ubuntu:22.04"
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/_ci_build.yml
     secrets: inherit
     with:
       build-platform: ${{matrix.build-platform}}
       base-image: ${{matrix.base-image}}
+
+  deb-validation:
+    needs: check-trigger
+    if: ${{ needs.check-trigger.outputs.VALIDATE_FULL }}
+    strategy:
+      matrix:
+        base-tag: ["ubuntu:22.04"]
+        platform: [amd64]
+    uses: ./.github/workflows/_deb_build.yml
+    secrets: inherit
+    with:
+      base-tag: ${{ matrix.base-tag }}
+      platform: ${{ matrix.platform }}
+

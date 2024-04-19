@@ -13,32 +13,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+from action_helpers.write_output import write_output
+from action_helpers.git_ref_vars import git_ref_vars
 from action_helpers.action_runner import action_runner
 from action_helpers.current_timestamp import current_timestamp
-from action_helpers.git_ref_vars import git_ref_vars
-from action_helpers.write_output import write_output
 
 def configure(
-  clone_dir: str,
-  ref_name: str,
-  ref_type: str,
-  repository: str,
-  test_platform: str,
-) -> None:
-  build_label, build_version = git_ref_vars(
-    clone_dir=clone_dir,
-    ref_type=ref_type,
-    ref_name=ref_name)
-  runner = action_runner(test_platform)
+    base_image: str,
+    base_tester_tag: str,
+    build_platform: str,
+    clone_dir: str,
+    ref_name: str,
+    ref_type: str,
+    repository: str):
+  _, build_version = git_ref_vars(clone_dir, ref_type, ref_name)
+  runner = action_runner(build_platform)
   repository_name = repository.replace("/", "-")
-  platform_name = test_platform.replace("/", "-")
+  build_platform_label = build_platform.replace("/", "-")
+  base_image_tag = base_image.replace(":", "-")
+  base_tester_image = f"{base_tester_tag}:{base_image_tag}"
   test_date = current_timestamp()
-  test_id = f"release-{platform_name}-{build_label}__{build_version}"
+  test_id = f"ci-{build_platform_label}__${build_version}"
   test_artifact = f"{repository_name}-test-{test_id}__{test_date}"
-  write_output({
-    "TEST_ID": test_id,
-    "TEST_ARTIFACT": test_artifact,
-    "TEST_DATE": test_date,
-    "RUNNER": runner,
-  })
 
+  login_github = base_tester_image.startswith("ghcr.io/")
+  login_dockerhub = not login_github
+
+  write_output({
+    "BASE_TESTER_IMAGE": base_tester_image,
+    "LOGIN_GITHUB": login_github,
+    "LOGIN_DOCKERHUB": login_dockerhub,
+    "RUNNER": runner,
+    "TEST_ARTIFACT": test_artifact,
+    "TEST_ID": test_id,
+    "TEST_DATE": test_date,
+  })

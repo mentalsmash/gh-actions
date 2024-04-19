@@ -1,0 +1,89 @@
+name: Deb Release
+run-name: |
+  deb release [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}${{github.ref_type == 'branch' && '@' || ''}}${{github.ref_type == 'branch' && github.sha || ''}}]
+
+on:
+  workflow_dispatch:
+
+  push:
+    tags:
+      - '*'
+      - '!*/**'
+
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+
+concurrency:
+  group: deb-release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: read
+
+env:
+  # [IMPLEMENTME] Configure variables
+  DEB_IMAGES: '["ubuntu:22.04"]'
+  DEB_PLATFORMS: '["amd64", "arm64"]'
+  DEB_ARTIFACTS: |
+    ref-project-debdocker-deb-*-amd64__*/*.deb
+    ref-project-debdocker-deb-*-arm64__*/*.deb
+
+jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      DO_BUILD: ${{steps.config.outputs.DO_BUILD}}
+      DEB_IMAGES: ${{steps.config.outputs.DEB_IMAGES}}
+      DEB_PLATFORMS: ${{steps.config.outputs.DEB_PLATFORMS}}
+    steps:
+      - name: "Generate test configuration"
+        id: config
+        run: |
+          if [ \( "${{github.event_name}}" = workflow_run -a "${{github.ref_name}}" = master \) \
+                -o "${{github.ref_type}}" = tag ]; then
+            do_build=y
+          fi
+          (
+            echo DO_BUILD=${do_build}
+            echo DEB_PLATFORMS="${{ env.DEB_PLATFORMS }}"
+            echo DEB_IMAGES="${{ env.DEB_IMAGES }}"
+            echo 'DEB_ARTIFACTS<<EOF'
+            echo "${{ env.DEB_ARTIFACTS }}"
+            echo EOF
+          ) >> ${GITHUB_OUTPUT}
+      - name: "Fail if upstream job failed"
+        run: |
+          echo "upstream job for ${{github.ref_type}} ${{github.ref_name}} failed with conclusion '${{github.event.workflow_run.conclusion}}'"
+          exit 1
+        if: github.event_name == 'workflow_run' && steps.config.outputs.DO_BUILD && github.event.workflow_run.conclusion != 'success'
+
+  build-packages:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.DO_BUILD
+    strategy:
+      matrix:
+        base-tag: ${{ fromJson(needs.check-trigger.outputs.DEB_IMAGES ) }}
+        platform: ${{ fromJson(needs.check-trigger.outputs.DEB_PLATFORMS) }}
+    uses: ./.github/workflows/_deb_build.yml
+    secrets: inherit
+    with:
+      base-tag: ${{ matrix.base-tag }}
+      platform: ${{ matrix.platform }}
+
+  publish_release:
+    needs:
+      - build-packages
+      - check-trigger
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create new release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ${{ needs.check-trigger.outputs.DEB_ARTIFACTS }}

@@ -1,0 +1,189 @@
+name: Deb Release (Build & Test)
+run-name: |
+  deb release (build & test) [${{github.ref_name}}]
+
+on:
+  workflow_dispatch:
+    inputs:
+      base-tag:
+        description: Base distribution image
+        type: string
+        required: true
+      platform:
+        description: Build platform
+        type: string
+        required: true
+      pull-request:
+        description: Treat ref as a pull request
+        type: boolean
+        default: false
+
+  workflow_call:
+    inputs:
+      base-tag:
+        type: string
+        required: true
+      platform:
+        type: string
+        required: true
+      pull-request:
+        type: boolean
+        default: false
+
+concurrency:
+  group: deb-release-${{ github.ref }}-${{inputs.platform}}-${{inputs.base-tag}}
+  cancel-in-progress: true
+
+permissions:
+  packages: read
+  contents: read
+
+env:
+  CLONE_DIR: src/repo
+  DEB_DIST_DIR: debian-dist
+  DEB_BUILDER: ghcr.io/${{ github.repository }}-deb-builder
+  DOCKERFILE: docker/debian-tester/Dockerfile
+  LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest,
+  LOCAL_TESTER_RESULTS: src/repo/test-results
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      DEB_ARTIFACT: ${{ steps.config.outputs.DEB_ARTIFACT }}
+      DEB_BUILDER: ${{ steps.config.outputs.DEB_BUILDER }}
+      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
+      RUNNER: ${{ steps.config.outputs.RUNNER }}
+      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
+      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Generate build configuration
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
+          from action_helpers.workflows.deb_build import configure
+
+          configure(
+            base_tag="${{ inputs.base-tag }}",
+            clone_dir="${{ env.CLONE_DIR }}",
+            deb_builder="${{ env.DEB_BUILDER }}",
+            platform="${{ inputs.platform }}",
+            ref_name="${{ github.ref_name }}",
+            ref_type="${{ github.ref_type }}",
+            repository="${{ github.repository }}",
+          );
+
+  build-packages:
+    needs: config
+    runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
+    steps:
+    - name: Clone uno
+      uses: actions/checkout@v4
+      with:
+        path: src/uno
+        submodules: true
+
+    - name: Log in to GitHub
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build debian packages
+      run: |
+        make -C src/uno changelog
+        make -C src/uno debuild
+      env:
+        DEB_BUILDER: ${{ needs.config.outputs.DEB_BUILDER }}
+  
+    - name: Upload debian packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ needs.config.outputs.DEB_ARTIFACT }}
+        path: ${{ env.CLONE_DIR }}/${{ env.DEB_DIST_DIR }}/*
+
+    - name: Fix permissions
+      run: |
+        docker run --rm \
+          -v $(pwd)/${{ env.CLONE_DIR }}:/repo \
+          ${{ needs.config.outputs.DEB_BUILDER }} \
+          chown -R $(id -u):$(id -g) /repo
+      if: always()
+
+  test-packages:
+    needs:
+      - config
+      - build-packages
+    runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
+    env:
+      TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+    steps:
+    - name: Clone source repository
+      uses: actions/checkout@v4
+      with:
+        path: ${{ env.CLONE_DIR }}
+        submodules: true
+
+    - name: Download debian packages artifact
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ needs.config.outputs.DEB_ARTIFACT }}
+
+    - name: Move artifacts in place
+      run: |
+        mkdir -p ${{ env.CLONE_DIR}}/${{ env.DEB_DIST_DIR }}
+        mv -v ${{ needs.config.outputs.DEB_ARTIFACT }}/* \
+          ${{ env.CLONE_DIR}}/${{ env.DEB_DIST_DIR }}/
+
+    - name: Log in to GitHub
+      uses: docker/login-action@v3
+      if: needs.config.outputs.LOGIN_GITHUB
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Log in to DockerHub
+      uses: docker/login-action@v3
+      if: needs.config.outputs.LOGIN_DOCKERHUB
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build tester image
+      uses: docker/build-push-action@v5
+      with:
+        file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+        tags: ${{ env.LOCAL_TESTER_IMAGE }}
+        load: true
+        context: ${{ env.CLONE_DIR }}
+        build-args: |
+          BASE_IMAGE=${{ inputs.base-tag }}
+
+    - name: Run tests
+      run: |
+        make -C ${{ env.CLONE_DIR}} debtest
+      env:
+        DEBUG: ${{ runner.debug }}
+        TEST_IMAGE: ${{ env.LOCAL_TESTER_IMAGE }}
+
+    # Always collect and upload available test results
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ needs.config.outputs.TEST_ARTIFACT }}
+        path: ${{ env.LOCAL_TESTER_RESULTS }}/*
+      if: always()
+

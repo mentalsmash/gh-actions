@@ -46,10 +46,9 @@ platforms (e.g. Windows), or distribution methods (e.g. other packaging formats)
     `<owner>/<repo>:<major>.<minor>.<patch>`, `<owner>/<repo>:<major>.<minor>`,
     and `<owner>/<repo>:<major>`.
 
-  - The images are published on GitHub's [Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry),
+  - The images are pushed both to [DockerHub](https://hub.docker.com/), and to GitHub's
+    [Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry),
     as a ["container" package](https://github.com/features/packages).
-
-  - The image can be optionally pushed to DockerHub, in addition or in alternative to GitHub.
 
   - Images are first built with a "pre-release" tag to undergo testing, and they are pushed
     with their final release tags only after successful validation.

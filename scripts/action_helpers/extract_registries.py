@@ -13,20 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from .action_runner import action_runner
-from .current_timestamp import current_timestamp
-from .docker_registry_from_tag import docker_registry_from_tag
-from .git_ref_vars import git_ref_vars
-from .pull_request_validate_actions import pull_request_validate_actions
-from .sha_short import sha_short
-from .write_output import write_output
+from action_helpers.docker_registry_from_tag import docker_registry_from_tag
 
-__all__ = [
-  "action_runner",
-  "current_timestamp",
-  "docker_registry_from_tag",
-  "git_ref_vars",
-  "pull_request_validate_actions",
-  "sha_short",
-  "write_output",
-]
+def extract_registries(tags: list[str]) -> set[str]:
+  registries = set()
+  for rel_tag in tags:
+    registry = docker_registry_from_tag(rel_tag)
+    registries.add(registry)
+  return registries
+

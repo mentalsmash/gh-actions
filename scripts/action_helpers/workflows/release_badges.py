@@ -15,7 +15,7 @@
 ###############################################################################
 from action_helpers.sha_short import sha_short
 from action_helpers.write_output import write_output
-from action_helpers.github_ref_vars import github_ref_vars
+from action_helpers.git_ref_vars import git_ref_vars
 
 def configure(
   clone_dir: str,
@@ -23,7 +23,7 @@ def configure(
   ref_name: str,
   repository: str,
 ) -> None:
-  build_type, _ = github_ref_vars(clone_dir, ref_type, ref_name)
+  build_type, _ = git_ref_vars(clone_dir, ref_type, ref_name)
 
   if ref_type == "branch":
     version = sha_short(clone_dir)

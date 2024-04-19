@@ -1,0 +1,25 @@
+name: Setup
+run-name: periodic infrastructure setup
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 1 1 * *"
+
+concurrency:
+  group: uno-setup-ci
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  build_image_debian_builder:
+    uses: ./.github/workflows/image_build_debian_builder.yml
+    secrets: inherit
+
+  build_image_admin:
+    uses: ./.github/workflows/image_build_admin.yml
+    secrets: inherit

@@ -1,0 +1,61 @@
+name: Image Build (admin)
+run-name: |
+  docker build [ghcr.io/${{ github.repository }}-admin]
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+
+  push:
+    branches:
+      - master
+    paths:
+      - docker/admin/**
+      - .github/workflows/image_build_admin.yml
+
+concurrency:
+  group: uno-ci-image-build-admin
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract image metadata
+        id: meta-docker
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}-admin
+          tags: latest
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+
+      - name: Log in to GitHub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push admin image
+        uses: docker/build-push-action@v5
+        with:
+          file: docker/admin/Dockerfile
+          tags: ${{ steps.meta-docker.outputs.tags }}
+          annotations: ${{ steps.meta-docker.outputs.annotations }}
+          labels: ${{ steps.meta-docker.outputs.labels }}
+          push: true
+          context: .
+          platforms: linux/amd64

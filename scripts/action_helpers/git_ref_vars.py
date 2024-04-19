@@ -16,7 +16,7 @@
 from pathlib import Path
 from action_helpers.sha_short import sha_short
 
-def github_ref_vars(clone_dir: Path | str, ref_type: str, ref_name: str) -> tuple[str, str]:
+def git_ref_vars(clone_dir: Path | str, ref_type: str, ref_name: str) -> tuple[str, str]:
   if ref_type == "branch":
     build_label = "nightly"
     build_version = f"{ref_name}@{sha_short(clone_dir)}"
@@ -25,4 +25,5 @@ def github_ref_vars(clone_dir: Path | str, ref_type: str, ref_name: str) -> tupl
     build_version = ref_name
   else:
     raise RuntimeError("unknown ref type", ref_type)
+  build_version = build_version.replace("/", "-")
   return build_label, build_version

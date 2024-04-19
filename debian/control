@@ -1,0 +1,13 @@
+# [IMPLEMENTME] Customize this file and delete this line
+Source: ref-project-debdocker
+Maintainer: The Maintainer <maintainer@example.com>
+Priority: optional
+Build-Depends: debhelper (>=11~), build-essential
+Standards-Version: 4.5.0
+Homepage: https://github.com/mentalsmash/ref-project-debdocker
+
+Package: ref-project-debdocker
+Architecture: any
+Depends: ${misc:Depends}
+Description:  reference implementation for a debian/docker project 
+ This is where you describe your package.

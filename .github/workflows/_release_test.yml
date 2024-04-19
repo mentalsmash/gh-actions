@@ -22,7 +22,7 @@ env:
   CLONE_DIR: src/repo
   DOCKERFILE: docker/test/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
-  LOCAL_TESTER_RESULTS: test-results
+  LOCAL_TESTER_RESULTS: src/repo/test-results
 
 jobs:
   config:
@@ -98,8 +98,7 @@ jobs:
     
       - name: Run tests
         run: |
-          mkdir -p ${LOCAL_TESTER_RESULTS}
-          echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+          make -C ${{ env.CLONE_DIR }} test-release
         env:
           DEBUG: ${{ runner.debug }}
 

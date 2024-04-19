@@ -36,10 +36,7 @@ env:
   CLONE_DIR: src/repo
   DOCKERFILE: docker/Dockerfile
   LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
-  LOCAL_TESTER_RESULTS: test-results
-  # Assumption: BASE_TESTER_TAG is private/internal and requires login
-  LOGIN_GITHUB: 'y'
-  LOGIN_DOCKERHUB: ''
+  LOCAL_TESTER_RESULTS: src/repo/test-results
 
 jobs:
   config:
@@ -61,7 +58,7 @@ jobs:
       
       - name: Validate code
         run: |
-          echo "Validating code changes..."
+          make -C ${{ env.CLONE_DIR }} code-check
 
       - name: Generate build and test configuration
         id: config
@@ -69,39 +66,17 @@ jobs:
         run: |
           import sys
           sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers import *
+          from action_helpers.workflows.ci import configure
 
-          if "${{ github.ref_type }}" == "tag":
-            image_version = "${{github.ref_name}}"
-          else:
-            image_version = f"${{github.ref_name}}@{sha_short("${{env.CLONE_DIR}}")}"
-
-          if "${{inputs.build-platform}}" == "linux/arm64":
-            runner = '["self-hosted", "linux", "arm64"]'
-          elif "${{inputs.build-platform}}" == "linux/amd64":
-            runner = '"ubuntu-latest"'
-          else:
-            raise RuntimeError("unsupported build platform", "${{inputs.build-platform}}")
-
-          image_version = image_version.replace("/", "-")
-          repository_name = "${{github.repository}}".replace("/", "-")
-          build_platform_label = "${{inputs.build-platform}}".replace("/", "-")
-          base_image_tag = "${{inputs.base-image}}".replace(":", "-")
-          base_tester_image = f"${{ env.BASE_TESTER_TAG}}:{base_image_tag}"
-          test_date = current_timestamp()
-          test_id = f"ci-${build_platform_label}__${image_version}"
-          test_artifact = "${repository_name}-test-${test_id}__${test_date}"
-
-          write_output({
-            "BASE_TESTER_IMAGE": base_tester_image,
-            "RUNNER": runner,
-            "TEST_ARTIFACT": test_artifact,
-            "TEST_ID": test_id,
-            "TEST_DATE": test_date,
-          }, [
-            "LOGIN_GITHUB",
-            "LOGIN_DOCKERHUB",
-          ])
+          configure(
+            base_image="${{ inputs.base-image }}",
+            base_tester_tag="${{ env.BASE_TESTER_TAG }}",
+            build_platform="${{ inputs.build-platform }}",
+            clone_dir="${{ env.CLONE_DIR }}",
+            ref_name="${{ github.ref_name }}",
+            ref_type="${{ github.ref_type }}",
+            repository="${{ github.repository}}"
+          )
 
   build-n-test:
     needs: config
@@ -121,6 +96,8 @@ jobs:
         with:
           driver-opts: network=host
 
+        # Assumption: BASE_TESTER_TAG is private/internal and requires login
+        # either on GitHub or DockerHub
       - name: Log in to GitHub
         if: needs.config.outputs.LOGIN_GITHUB
         uses: docker/login-action@v3
@@ -150,8 +127,7 @@ jobs:
 
       - name: Run tests
         run: |
-          mkdir -p ${LOCAL_TESTER_RESULTS}
-          echo "Test run id ${TEST_DATE}" > ${LOCAL_TESTER_RESULTS}/${TEST_ID}.log
+          make -C ${{ env.CLONE_DIR }} test-ci
         env:
           DEBUG: ${{ runner.debug }}
 

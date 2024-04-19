@@ -14,17 +14,14 @@
 # limitations under the License.
 ###############################################################################
 from action_helpers.write_output import write_output
-from action_helpers.docker_registry_from_tag import docker_registry_from_tag
+from scripts.action_helpers.extract_registries import extract_registries
 
 def configure(
   release_tags: str,
   test_tag_registry: str,
 ) -> None:
-  registries = set(test_tag_registry)
-  for rel_tag in release_tags.splitlines():
-    registry = docker_registry_from_tag(rel_tag)
-    registries.add(registry)
-
+  registries = extract_registries(release_tags)
+  registries.add(test_tag_registry)
   write_output({
     "LOGIN_DOCKERHUB": "dockerhub" in registries,
     "LOGIN_GITHUB": "github" in registries,

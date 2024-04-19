@@ -1,0 +1,33 @@
+# [IMPLEMENTME] Update image names
+services:
+  #############################################################################
+  # Local build of the project's image
+  #############################################################################
+  image:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      tags:
+        - mentalsmash/ref-project-debdocker:dev
+      args:
+        BASE_IMAGE: ubuntu:22.04
+  test-runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      tags:
+        - mentalsmash/ref-project-debdocker-test-runner:latest
+      args:
+        DEV: y
+        BASE_IMAGE: ubuntu:22.04
+  #############################################################################
+  # Debian package builders
+  #############################################################################
+  debian-builder:
+    build:
+      context: .
+      dockerfile: docker/debian-builder/Dockerfile
+      tags:
+        - mentalsmash/ref-project-debdocker-debian-builder:latest
+      args:
+        BASE_IMAGE: ubuntu:22.04

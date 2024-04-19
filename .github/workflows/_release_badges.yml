@@ -45,8 +45,6 @@ jobs:
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      # Comment out to actually update the badge
-      if: ${{ false }}
       with:
         auth: ${{ secrets.GIST_UPDATE_TOKEN }}
         gistID: ${{ inputs.badge-version }}
@@ -57,8 +55,6 @@ jobs:
 
     - name: Update base image badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      # Comment out to actually update the badge
-      if: ${{ false }}
       with:
         auth: ${{ secrets.GIST_UPDATE_TOKEN }}
         gistID: ${{ inputs.badge-base-img }}

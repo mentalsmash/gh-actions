@@ -34,10 +34,6 @@ RUN set -xe; \
     echo ${TEST_USER} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${TEST_USER}; \
     chmod 0440 /etc/sudoers.d/${TEST_USER}; \
     adduser ${TEST_USER} sudo; \
-    # reinstall uno in "editable" mode
-    if [ -n "${DEV}" ]; then \
-      pip3 install -e ${UNO_DIR}; \
-    fi; \
     # Initialize ~/.ssh
     mkdir -p /home/${TEST_USER}/.ssh; \
     touch /home/${TEST_USER}/.ssh/authorized_keys; \

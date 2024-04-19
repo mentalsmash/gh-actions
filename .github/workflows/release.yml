@@ -19,6 +19,7 @@ permissions:
   packages: write
 
 env:
+  # [IMPLEMENTME] Configure variables
   #############################################################################
   # Generated image settings
   #############################################################################
@@ -29,20 +30,20 @@ env:
   # Push pre-release image to GitHub for testing
   PRERELEASE_TAG: ghcr.io/${{ github.repository }}-test
   # Image tag for the final release image.
+  # Published to both GitHub and DockerHub
   RELEASE_TAGS: |
     ghcr.io/${{github.repository}}
-  # Uncomment to also push the final image to DockerHub
-  #   ${{github.repository}}
+    ${{github.repository}}
   # Add an arbitrary suffix to the image tags
   TAG_SUFFIX: ''
   #############################################################################
   # Release badges settings
   #############################################################################
   # Gist IDs for the JSON objects backing release badges
-  BADGE_NIGHTLY_BASE_IMG: "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_NIGHTLY_VERSION:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_STABLE_BASE_IMG:  "1234567890ABCDEFGHIJKLMNOPQRSTUV"
-  BADGE_STABLE_VERSION:   "1234567890ABCDEFGHIJKLMNOPQRSTUV"
+  BADGE_NIGHTLY_BASE_IMG: "1fd45f442b8ab91bef6ef56423368128"
+  BADGE_NIGHTLY_VERSION:  "9653c15d4e5b0413fb71397e643ab822"
+  BADGE_STABLE_BASE_IMG:  "6391e3a762e26c822281b1dbf2af5bd1"
+  BADGE_STABLE_VERSION:   "2fda06b2047d0643d91308462197110a"
   #############################################################################
   # Local workflow settings 
   #############################################################################

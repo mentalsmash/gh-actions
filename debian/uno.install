@@ -1,0 +1,6 @@
+# [IMPLEMENTME] Customize this file and delete this line
+dist/build_id       opt/ref-project-debdocker/
+README.md           opt/ref-project-debdocker/
+.github             opt/ref-project-debdocker/
+scripts             opt/ref-project-debdocker/
+docker              opt/ref-project-debdocker/
