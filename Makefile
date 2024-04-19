@@ -35,7 +35,7 @@ TEST_ID ?= local
 # The date when the tests were run. This variable is automatically set by CI workflows
 TEST_DATE ?= $(shell date +%Y%m%d-%H%M%S)
 
-.PHONY:
+.PHONY: \
   build \
   changelog \
 	clean \
