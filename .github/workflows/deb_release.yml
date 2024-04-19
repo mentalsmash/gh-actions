@@ -26,7 +26,7 @@ env:
   # [IMPLEMENTME] Configure variables
   DEB_IMAGES: '["ubuntu:22.04"]'
   DEB_PLATFORMS: '["amd64", "arm64"]'
-  DEB_ARTIFACTS: mentalsmash-ref-project-debdocker-deb-*/*.deb
+  DEB_ARTIFACTS_PREFIX: mentalsmash-ref-project-debdocker-deb-
 
 jobs:
   check-trigger:
@@ -35,6 +35,7 @@ jobs:
       DO_BUILD: ${{steps.config.outputs.DO_BUILD}}
       DEB_IMAGES: ${{steps.config.outputs.DEB_IMAGES}}
       DEB_PLATFORMS: ${{steps.config.outputs.DEB_PLATFORMS}}
+      DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
       - name: "Generate test configuration"
         id: config
@@ -47,8 +48,8 @@ jobs:
             echo DO_BUILD=${do_build}
             echo DEB_PLATFORMS='${{ env.DEB_PLATFORMS }}'
             echo DEB_IMAGES='${{ env.DEB_IMAGES }}'
-            echo 'DEB_ARTIFACTS<<EOF'
-            echo "${{ env.DEB_ARTIFACTS }}"
+            echo 'DEB_ARTIFACTS_PREFIX<<EOF'
+            echo "${{ env.DEB_ARTIFACTS_PREFIX }}"
             echo EOF
           ) >> ${GITHUB_OUTPUT}
       - name: "Fail if upstream job failed"
@@ -79,9 +80,13 @@ jobs:
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ needs.check-trigger.outputs.DEB_ARTIFACTS_PREFIX }}*
+        path: ${{ github.workspace }}/debian-dist
+        merge-multiple: true
 
     - name: Create new release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ needs.check-trigger.outputs.DEB_ARTIFACTS }}
+          debian-dist/*.deb
