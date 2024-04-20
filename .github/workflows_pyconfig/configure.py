@@ -137,7 +137,7 @@ def configure(
       action_outputs[var] = _select_attribute(ctx, ctx_select)
 
   if workflow:
-    workflow_mod = importlib.import_module(f"workflow.{workflow}")
+    workflow_mod = importlib.import_module(f"workflows.{workflow}")
     dyn_outputs = workflow_mod.configure(cfg=cfg, github=github, inputs=inputs)
     if dyn_outputs:
       action_outputs.update(dyn_outputs)
