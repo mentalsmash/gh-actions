@@ -14,111 +14,65 @@
 # limitations under the License.
 ###############################################################################
 import json
-import subprocess
 from pathlib import Path
 from typing import NamedTuple
 from datetime import datetime
 
-
-###############################################################################
-#
-###############################################################################
-def _sha_short(clone_dir: Path | str) -> str:
-  return (
-    subprocess.run(
-      ["git", "rev-parse", "--short", "HEAD"],
-      cwd=clone_dir,
-      stdout=subprocess.PIPE,
-    )
-    .stdout.decode()
-    .strip()
-  )
+from .pyconfig import sha_short, extract_registries, tuple_to_dict, merge_dicts
 
 
 ###############################################################################
 #
 ###############################################################################
-def _extract_registries(local_org: str, tags: list[str]) -> set[str]:
-  def _registry_from_tag(image_tag: str) -> str:
-    if image_tag.startswith(f"ghcr.io/{local_org}/"):
-      return "github"
-    elif image_tag.startswith(f"{local_org}/"):
-      return "dockerhub"
-    else:
-      return None
-
-  registries = set()
-  for rel_tag in tags:
-    registry = _registry_from_tag(rel_tag)
-    if not registry:
-      continue
-    registries.add(registry)
-  return registries
-
-
-###############################################################################
-#
-###############################################################################
-def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
-  clone_dir = Path(__file__).parent.parent.parent
-  print(f"Clone directory for {github.repository}: {clone_dir}")
-
-  release_tag = {
-    "tag": f"latest{cfg.release.tag_suffix}",
-    "branch": f"nightly{cfg.release.tag_suffix}",
-  }[github.ref_type]
-
-  docker_build_platforms = ",".join(cfg.release.build_platforms)
-
-  docker_tags_config = "\n".join(
-    [
-      "type=semver,pattern={{version}}",
-      "type=semver,pattern={{major}}.{{minor}}",
-      "type=semver,pattern={{major}}",
-      *(
-        [
-          f"type=raw,value={release_tag},priority=650",
-          "type=ref,event=branch",
-        ]
-        if github.ref_type == "branch"
-        else []
-      ),
-    ]
-  )
-
-  docker_flavor_config = f"suffix={cfg.release.tag_suffix},onlatest=true"
-
-  ref_sha = _sha_short(clone_dir)
+def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
+  #############################################################################
+  # Current workflow run settings
+  #############################################################################
+  ref_sha = sha_short(clone_dir)
 
   if github.ref_type == "tag":
-    build_label = "stable"
+    build_profile = "stable"
     build_version = github.ref_name
   else:
-    build_label = "nightly"
+    build_profile = "nightly"
     build_version = f"{github.ref_name}@{ref_sha}"
   build_version = build_version.replace("/", "-")
 
+  build_date = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+  #############################################################################
+  # Container Release settings
+  #############################################################################
+  release_cfg = getattr(cfg.release.profile, build_profile)
+
+  release_tag = f"{release_cfg.tag}{release_cfg.tag_suffix}"
+
+  docker_build_platforms = ",".join(release_cfg.build_platforms)
+
+  if release_cfg.tag_suffix is not None:
+    docker_flavor_config = f"suffix={release_cfg.tag_suffix},onlatest=true"
+  else:
+    docker_flavor_config = ""
+
   repo_org = github.repository.split("/")[0]
 
-  prerel_image = f"{cfg.release.test_repo}:{release_tag}"
-  prerel_registries = _extract_registries(
+  prerel_image = f"{release_cfg.prerelease_repo}:{release_tag}"
+  prerel_registries = extract_registries(
     repo_org,
     [
-      cfg.release.base_image,
+      release_cfg.base_image,
       prerel_image,
     ],
   )
 
-  release_images = [f"{release_repo}:{release_tag}" for release_repo in cfg.release.repos]
-  release_registries = _extract_registries(
+  release_images = [f"{release_repo}:{release_tag}" for release_repo in release_cfg.final_repos]
+  release_registries = extract_registries(
     repo_org,
     [
-      *cfg.release.repos,
+      *release_images,
       prerel_image,
     ],
   )
-
-  test_date = datetime.now().strftime("%Y%m%d-%H%M%S")
 
   test_runners_matrix = json.dumps(
     [
@@ -127,70 +81,140 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
     ]
   )
 
-  debian_enabled = (clone_dir / "debian" / "control").is_file()
-  debian_base_images_matrix = json.dumps(cfg.debian.base_images)
-  debian_build_architectures_matrix = json.dumps(cfg.debian.build_architectures)
-  debian_registries = _extract_registries(
-    repo_org,
-    [
-      cfg.debian.builder_repo,
-      *cfg.debian.base_images,
-    ],
-  )
-
-  ci_registries = _extract_registries(
-    repo_org,
-    [
-      cfg.ci.ci_tester_repo,
-    ],
-  )
-
-  badge_cfg = getattr(cfg.release.badges, build_label)
-  badge_filename = github.repository.replace("/", "-") + "-badge-" + build_label
-  badge_base_image = badge_cfg.base_image._asdict()
-  badge_base_image["message"] = cfg.release.base_image
+  badge_filename = github.repository.replace("/", "-") + "-badge-" + build_profile
+  badge_base_image = tuple_to_dict(release_cfg.badge.base_image)
+  badge_base_image["message"] = release_cfg.base_image
   badge_base_image["filename"] = f"{badge_filename}-base-image.json"
-  badge_version = badge_cfg.version._asdict()
+  badge_version = tuple_to_dict(release_cfg.badge.version)
   badge_version["message"] = build_version
   badge_version["filename"] = f"{badge_filename}-version.json"
 
+  #############################################################################
+  # Debian packaging settings
+  #############################################################################
+  debian_enabled = (clone_dir / "debian" / "control").is_file()
+  debian_builder_base_images_matrix = json.dumps(cfg.debian.buidler.base_images)
+  debian_builder_docker_build_platforms = ",".join(
+    [f"linux/{arch}" for arch in cfg.debian.builder.architectures]
+  )
+  debian_builder_registries = extract_registries(
+    repo_org,
+    [
+      cfg.debian.builder.repo,
+      *cfg.debian.builder.base_images,
+    ],
+  )
+
+  #############################################################################
+  # CI infrastructure settings
+  #############################################################################
+  admin_repo = cfg.ci.images.admin.image.split(":")[0]
+  admin_tag = cfg.ci.images.admin.image.split(":")[-1]
+  admin_registries = extract_registries(
+    repo_org,
+    [
+      cfg.ci.images.admin.image,
+      cfg.ci.images.admin.base_image,
+    ],
+  )
+  admin_build_platforms_config = ",".join(cfg.ci.images.admin.build_platforms)
+  admin_base_image_matrix = json.dumps([])
+
+  release_base_images = [release_cfg.base_image for release_cfg in cfg.release]
+
+  tester_base_image_matrix = json.dumps(release_base_images)
+  tester_registries = extract_registries(
+    repo_org,
+    [
+      cfg.ci.images.tester.repo,
+      *release_base_images,
+    ],
+  )
+
+  #############################################################################
+  # Output generated settings
+  #############################################################################
   return {
-    "badge": {
-      "base_image": badge_base_image,
-      "version": badge_version,
-    },
+    ###########################################################################
+    # Build config
+    ###########################################################################
     "build": {
-      "label": build_label,
+      "profile": build_profile,
       "version": build_version,
+      "date": build_date,
     },
-    "ci": {
-      "login_dockerhub": "dockerhub" in ci_registries,
-      "login_github": "github" in ci_registries,
-    },
-    "debian": {
-      "base_images_matrix": debian_base_images_matrix,
-      "build_architectures_matrix": debian_build_architectures_matrix,
-      "enabled": debian_enabled,
-      "login_dockerhub": "dockerhub" in debian_registries,
-      "login_github": "github" in debian_registries,
-    },
-    "docker": {
-      "build_platforms": docker_build_platforms,
-      "flavor_config": docker_flavor_config,
-      "tags_config": docker_tags_config,
-    },
-    "prerelease": {
-      "image": prerel_image,
-      "login_dockerhub": "dockerhub" in prerel_registries,
-      "login_github": "github" in prerel_registries,
-    },
-    "release": {
-      "images": release_images,
-      "login_dockerhub": "dockerhub" in release_registries,
-      "login_github": "github" in release_registries,
-      "tag": release_tag,
-      "test_runners_matrix": test_runners_matrix,
-      "repos": "\n".join(cfg.release.repos),
-    },
-    "test_date": test_date,
+    ###########################################################################
+    # CI config
+    ###########################################################################
+    "ci": merge_dicts(
+      {
+        "images": {
+          "admin": {
+            "login": {
+              "dockerhub": "dockerhub" in admin_registries,
+              "github": "github" in admin_registries,
+            },
+            "repo": admin_repo,
+            "tag": admin_tag,
+            "tags_config": admin_tag,
+            "build_platforms_config": admin_build_platforms_config,
+            "base_image_matrix": admin_base_image_matrix,
+          },
+          "tester": {
+            "base_image_matrix": tester_base_image_matrix,
+            "build_platforms_config": docker_build_platforms,
+            "login": {
+              "dockerhub": "dockerhub" in tester_registries,
+              "github": "github" in tester_registries,
+            },
+          },
+        },
+      },
+      tuple_to_dict(cfg.ci),
+    ),
+    ###########################################################################
+    # Debian config
+    ###########################################################################
+    "debian": merge_dicts(
+      {
+        "enabled": debian_enabled,
+        "builder": {
+          "base_image_matrix": debian_builder_base_images_matrix,
+          "build_platforms_config": debian_builder_docker_build_platforms,
+          "login": {
+            "dockerhub": "dockerhub" in debian_builder_registries,
+            "github": "github" in debian_builder_registries,
+          },
+        },
+      },
+      tuple_to_dict(cfg.debian),
+    ),
+    ###########################################################################
+    # Release config
+    ###########################################################################
+    "release": merge_dicts(
+      {
+        "badge": {
+          "base_image": badge_base_image,
+          "version": badge_version,
+        },
+        "build_platforms_config": docker_build_platforms,
+        "flavor_config": docker_flavor_config,
+        "prerelease_image": prerel_image,
+        "final_repos_config": "\n".join(cfg.release.repos),
+        "final_images": release_images,
+        "login": {
+          "dockerhub": "dockerhub" in release_registries,
+          "github": "github" in release_registries,
+        },
+        "login_prerel": {
+          "dockerhub": "dockerhub" in prerel_registries,
+          "github": "github" in prerel_registries,
+        },
+        "tag": release_tag,
+        "tags_config": release_cfg.tags_config,
+        "test_runners_matrix": test_runners_matrix,
+      },
+      tuple_to_dict(release_cfg),
+    ),
   }

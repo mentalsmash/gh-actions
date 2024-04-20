@@ -18,8 +18,17 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
-  build:
+  config:
     runs-on: ubuntu-latest
+    outputs:
+      CLONE_DIR: ${{ steps.config.outputs.CLONE_DIR }}
+      DOCKER_BASE_IMAGE: ${{ steps.config.outputs.DOCKER_BASE_IMAGE }}
+      DOCKER_TAGS_CONFIG: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+      DOCKER_FLAVOR_CONFIG: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
+      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
+      PRERELEASE_REPO: ${{ steps.config.outputs.PRERELEASE_REPO }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -37,56 +46,27 @@ jobs:
           configure(
             github="""${{ toJson(github) }}""",
             outputs="""\
+              CLONE_DIR = cfg.build.clone_dir
               DOCKER_BASE_IMAGE = cfg.release.base_image
-              DOCKER_TAGS_CONFIG = cfg.dyn.docker.tags_config
-              DOCKER_FLAVOR_CONFIG = cfg.dyn.docker.flavor_config
-              DOCKER_BUILD_PLATFORMS = cfg.dyn.docker.build_platforms
-              LOGIN_DOCKERHUB = cfg.dyn.prerelease.login_dockerhub
-              LOGIN_GITHUB = cfg.dyn.prerelease.login_github
-              TEST_REPO = cfg.release.test_repo
+              DOCKER_TAGS_CONFIG = cfg.release.tags_config
+              DOCKER_FLAVOR_CONFIG = cfg.release.flavor_config
+              DOCKER_BUILD_PLATFORMS = cfg.release.build_platforms_config
+              LOGIN_DOCKERHUB = cfg.release.login_prerel.dockerhub
+              LOGIN_GITHUB = cfg.release.login_prerel.github
+              PRERELEASE_REPO = cfg.release.prerelease_repo
             """)
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+  build:
+    needs: config
+    uses: ./.github/workflows/image_builder.yml
+    with:
+      base-image: ${{ needs.config.outputs.DOCKER_BASE_IMAGE }}
+      build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/Dockerfile
+      image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
+      image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+      image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      login-github: ${{ needs.config.outputs.LOGIN_GITHUB }}
+      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB }}
+      push: true
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract image metadata
-        id: metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ steps.config.outputs.TEST_REPO }}
-          tags: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
-          flavor: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
-
-      - name: Log in to GitHub
-        if: steps.config.outputs.LOGIN_GITHUB
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Log in to Docker HUb
-        if: steps.config.outputs.LOGIN_DOCKERHUB
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Build and push test images
-        uses: docker/build-push-action@v5
-        with:
-          file: ${{ env.CLONE_DIR }}/docker/Dockerfile
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          annotations: ${{ steps.metadata.outputs.annotations }}
-          push: true
-          context: ${{ env.CLONE_DIR }}
-          platforms: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
-          build-args: |
-            BASE_IMAGE=${{ steps.config.outputs.DOCKER_BASE_IMAGE }}

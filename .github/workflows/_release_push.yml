@@ -37,13 +37,13 @@ jobs:
           configure(
             github="""${{ toJson(github) }}""",
             outputs="""\
-              DOCKER_BUILD_PLATFORMS = cfg.dyn.docker.build_platforms
-              DOCKER_FLAVOR_CONFIG = cfg.dyn.docker.flavor_config
-              DOCKER_TAGS_CONFIG = cfg.dyn.docker.tags_config
-              LOGIN_DOCKERHUB = cfg.dyn.release.login_dockerhub
-              LOGIN_GITHUB = cfg.dyn.release.login_github
-              PRERELEASE_IMAGE = cfg.dyn.prerelease.image
-              RELEASE_REPOS = cfg.dyn.release.repos
+              DOCKER_BUILD_PLATFORMS = cfg.release.build_platforms_config
+              DOCKER_FLAVOR_CONFIG = cfg.release.flavor_config
+              DOCKER_TAGS_CONFIG = cfg.release.tags_config
+              LOGIN_DOCKERHUB = cfg.release.login.dockerhub
+              LOGIN_GITHUB = cfg.release.login.github
+              PRERELEASE_IMAGE = cfg.release.prerelease_image
+              RELEASE_REPOS = cfg.release.final_repos
             """)
 
       - name: Set up QEMU

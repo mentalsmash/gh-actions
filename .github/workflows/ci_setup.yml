@@ -1,4 +1,4 @@
-name: Setup
+name: Setup CI
 run-name: periodic infrastructure setup
 
 on:
@@ -8,7 +8,7 @@ on:
     - cron: "0 1 1 * *"
 
 concurrency:
-  group: uno-setup-ci
+  group: ci-setup
   cancel-in-progress: true
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
     secrets: inherit
 
   build-image-ci-tester:
-    uses: ./.github/workflows/image_build_ci_tester.yml
+    uses: ./.github/workflows/image_build_tester.yml
     secrets: inherit
 
   build-image-admin:

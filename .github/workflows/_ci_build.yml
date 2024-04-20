@@ -65,11 +65,11 @@ jobs:
             workflow="ci_build",
             github="""${{ toJson(github) }}""",
             outputs="""\
-              LOCAL_TESTER_IMAGE = cfg.ci.local_tester_image
-              LOCAL_TESTER_RESULTS = cfg.ci.local_tester_results
-              LOGIN_DOCKERHUB = cfg.dyn.ci.login_dockerhub
-              LOGIN_GITHUB = cfg.dyn.ci.login_github
-              TEST_DATE = cfg.dyn.test_date
+              LOCAL_TESTER_IMAGE = cfg.ci.local_tester.image
+              LOCAL_TESTER_RESULTS = cfg.ci.test.results_dir
+              LOGIN_DOCKERHUB = cfg.ci.local_tester.login.dockerhub
+              LOGIN_GITHUB = cfg.ci.local_tester.login.github
+              TEST_DATE = cfg.build.date
             """,
             inputs="""${{ toJson(inputs) }}""")
       
