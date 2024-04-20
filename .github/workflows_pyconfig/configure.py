@@ -60,14 +60,14 @@ def _tuple_to_dict(val: NamedTuple) -> dict:
 ###############################################################################
 #
 ###############################################################################
-def _select_attribute(ctx: NamedTuple | dict, selector: str) -> str:
-  def _getattr(obj: NamedTuple | dict, k: str):
+def _select_attribute(ctx: tuple | dict, selector: str) -> str:
+  def _getattr(obj: tuple | dict, k: str):
     if isinstance(obj, dict):
       return obj[k]
     else:
       return getattr(obj, k)
 
-  def _lookup_recur(current: NamedTuple | dict, selector_parts: list[str]) -> str:
+  def _lookup_recur(current: tuple | dict, selector_parts: list[str]) -> str:
     selected = _getattr(current, selector_parts[0])
     if len(selector_parts) == 1:
       return selected
