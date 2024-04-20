@@ -36,24 +36,20 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
 
   review_state = review_state or ""
 
-  print(f"Configuring PR {pr_no} job:")
+  print(f"Configuring PR #{pr_no} job:")
   print(f"- draft: {is_draft}")
   print(f"- event: {github.event_name}")
   print(f"- action: {github.event.action}")
   print(f"- review: {review_state}")
 
-  if github.event_name == "pull_request_review" and review_state == "approved":
+  if is_draft:
+    print(f"PR #{pr_no} is still in draft, no validation required yet.")
+  elif github.event_name == "pull_request_review" and review_state == "approved":
     # A new review was submitted, and the review state is "approved":
     # perform a full validation (ci build on more platforms + deb validation)
-    print(
-      f"PR {pr_no} reviewed and approved",
-      "" if not is_draft else "(still in draft)",
-    )
+    print(f"PR #{pr_no} reviewed and approved")
     result_full = True
-    result_deb = True
-    # perform a basic validation if the PR was approved while still in draft
-    result_basic = is_draft
-  elif github.event_name == "pull_request" and not is_draft:
+  elif github.event_name == "pull_request":
     # The PR was updated, and it is not a draft: perform a basic validation if:
     # - PR.state == 'opened':
     #   -> PR opened as non-draft, perform an initial check
@@ -62,13 +58,11 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
     #      TODO(asorbini) assert(${{ github.event.action }} != 'approved')
     #      (assumption is that any commit will invalidate a previous 'approved')
     # - PR.state == 'ready_for_review':
-    #   -> PR moved out of draft, run basic validation only if not already 'approved'.
-    #      (assumption: a basic validation was already performed on the `pull_request_review`
-    #       event for the approval.)
-    print(f"PR {pr_no} updated ({github.event.action})")
-    if github.event.action in ("opened", "synchronize"):
-      result_basic = True
-    elif github.event.action == "ready_for_review":
+    #   -> PR moved out of draft, run basic validation, and possibly full validation too
+    #      if the PR is already in "accepted" state
+    print(f"PR #{pr_no} updated ({github.event.action})")
+    result_basic = True
+    if github.event.action == "ready_for_review":
       # (assumption: if the PR is not "mergeable" it must have not been approved.
       # Ideally: we would just query the review state, but that doesn't seem to
       # be available on the pull_request object, see:
@@ -93,12 +87,12 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
         .stdout.decode()
         .strip()
       )
-      result_basic = review_state != "approved"
+      result_full = review_state == "approved"
 
-  # Debian testing requires a debian package.
-  result_deb = result_deb and (clone_dir / "debian" / "control").is_file()
+  # Debian testing requires a debian package, and for now we tie it to the full validation
+  result_deb = result_full and (clone_dir / "debian" / "control").is_file()
 
-  print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
+  print(f"PR #{pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
 
   return {
     "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
