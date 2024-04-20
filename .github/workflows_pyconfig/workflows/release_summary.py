@@ -93,7 +93,6 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     "\n"
     f"|----------|-------|"
     "\n"
-    "\n"
     f"| **CI Settings** | {settings_link} |"
     "\n"
     f"| **Commit** | [`{github.sha}`]({repo_url}/tree/{github.sha}) |"
