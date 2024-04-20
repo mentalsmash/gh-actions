@@ -29,7 +29,7 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     image_repo = image.split(":")[0]
     repo_name = image_repo.split("/")[-1]
     if image.startswith("ghcr.io/"):
-      return f"{repo_url}/pkgs/container/{repo_name}"
+      url = f"{repo_url}/pkgs/container/{repo_name}"
     elif image.startswith(github.repository):
       url = f"https://hub.docker.com/r/{image_repo}"
     else:
