@@ -120,7 +120,10 @@ def configure(
 
   if outputs is not None:
     for line in outputs.splitlines():
-      var, val_k = line.strip().split("=")
+      line = line.strip()
+      if not line:
+        continue
+      var, val_k = line.split("=")
       var = var.strip()
       val_k = val_k.strip()
       ctx_name = val_k[: val_k.index(".")]
