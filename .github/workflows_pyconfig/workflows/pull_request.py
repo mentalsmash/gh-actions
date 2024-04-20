@@ -82,6 +82,7 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
             "--jq",
             ".reviewDecision",
           ],
+          cwd=clone_dir,
           stdout=subprocess.PIPE,
         )
         .stdout.decode()
