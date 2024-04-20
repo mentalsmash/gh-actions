@@ -110,7 +110,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
   release_registries = _extract_registries(
     repo_org,
     [
-      *cfg.settings.release_repos,
+      *cfg.release.release_repos,
       prerel_image,
     ],
   )
