@@ -75,7 +75,7 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
       # https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request)
       # So we use the GitHub API to query the state,
       # see: https://stackoverflow.com/a/77647838
-      subprocess.run(["gh", "repo", "set-default", clone_dir], check=True)
+      subprocess.run(["gh", "repo", "set-default", github.repository], check=True)
       review_state = (
         subprocess.run(
           [
@@ -88,7 +88,6 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
             "--jq",
             ".reviewDecision",
           ],
-          cwd=clone_dir,
           stdout=subprocess.PIPE,
         )
         .stdout.decode()
