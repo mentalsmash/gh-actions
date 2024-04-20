@@ -61,6 +61,7 @@ def _extract_registries(local_org: str, tags: list[str]) -> set[str]:
 ###############################################################################
 def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
   clone_dir = Path(__file__).parent.parent
+  print(f"Clone directory for {github.repository}: {clone_dir}")
 
   release_tag = {
     "tag": f"latest{cfg.release.tag_suffix}",
