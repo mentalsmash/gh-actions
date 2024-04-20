@@ -13,8 +13,8 @@ ci:
   # Runner labels used by each architecture
   # Represented as JSON string
   runners:
-    linux/arm64: '["self-hosted", "linux", "arm64"]'
-    linux/amd64: '"ubuntu-latest"'
+    linux/arm64: [self-hosted, linux, arm64]
+    linux/amd64: ubuntu-latest
 
 #############################################################################
 # Debian packaging settings

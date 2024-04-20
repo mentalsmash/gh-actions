@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+import json
 from typing import NamedTuple
 
 from ..write_output import write_output
 
 
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
-  runner = getattr(cfg.ci.runners, f"linux_{inputs.build_architecture}")
+  runner = json.dumps(getattr(cfg.ci.runners, f"linux_{inputs.build_architecture}"))
 
   deb_builder_tag = inputs.base_image.replace(":", "-").replace("/", "-")
   repository_name = github.repository.replace("/", "-")
