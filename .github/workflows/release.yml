@@ -47,8 +47,6 @@ jobs:
     secrets: inherit
 
   deb_release:
-    needs:
-      - test
     uses: ./.github/workflows/deb_release.yml
     secrets: inherit
 
