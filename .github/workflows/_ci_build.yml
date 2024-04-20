@@ -1,6 +1,6 @@
-name: CI
+name: CI Build'n'Test
 run-name: |
-  CI test (${{inputs.base-image}}, ${{inputs.build-platform}}) [${{github.ref_name}}${{github.ref_type == 'branch' && '@' || ''}}${{github.ref_type == 'branch' && github.sha || ''}}]
+  CI build-n-test (${{inputs.base-image}}, ${{inputs.build-platform}}) [${{github.ref_name}}${{github.ref_type == 'branch' && '@' || ''}}${{github.ref_type == 'branch' && github.sha || ''}}]
 
 on:
   workflow_call:
@@ -32,20 +32,18 @@ permissions:
   packages: read
 
 env:
-  CI_TESTER_TAG: ghcr.io/${{ github.repository }}-ci-tester
   CLONE_DIR: src/repo
-  DOCKERFILE: docker/Dockerfile
-  LOCAL_TESTER_IMAGE: ${{ github.repository }}-test-runner:latest
-  LOCAL_TESTER_RESULTS: test-results
 
 jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
+      CI_RUNNER: ${{ steps.config.outputs.RUNNER }}
       CI_TESTER_IMAGE: ${{ steps.config.outputs.CI_TESTER_IMAGE }}
+      LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
+      LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
       LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
       LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
-      RUNNER: ${{ steps.config.outputs.RUNNER }}
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
@@ -56,34 +54,31 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
       
-      - name: Validate code
-        run: |
-          make -C ${{ env.CLONE_DIR }} code-check
-
-      - name: Generate build and test configuration
+      - name: Configure workflow
         id: config
         shell: python
         run: |
           import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers.workflows.ci_build import configure
-
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
           configure(
-            base_image="${{ inputs.base-image }}",
-            build_platform="${{ inputs.build-platform }}",
-            ci_tester_tag="${{ env.CI_TESTER_TAG }}",
-            clone_dir="${{ env.CLONE_DIR }}",
-            ref_name="${{ github.ref_name }}",
-            ref_type="${{ github.ref_type }}",
-            repository="${{ github.repository}}"
-          )
+            workflow="ci_build",
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              LOCAL_TESTER_IMAGE = cfg.ci.local_tester_image
+              LOCAL_TESTER_RESULTS = cfg.ci.local_tester_results
+              LOGIN_DOCKERHUB = cfg.dyn.ci.login_dockerhub
+              LOGIN_GITHUB = cfg.dyn.ci.login_github
+              TEST_DATE = cfg.dyn.test_date
+            """)
+      
+      - name: Validate code
+        run: |
+          make -C ${{ env.CLONE_DIR }} code-check
 
   build-n-test:
     needs: config
-    runs-on: ${{ fromJson(needs.config.outputs.RUNNER) }}
-    env:
-      TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
-      TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+    runs-on: ${{ fromJson(needs.config.outputs.CI_RUNNER) }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -116,8 +111,8 @@ jobs:
       - name: Build tester image
         uses: docker/build-push-action@v5
         with:
-          file: ${{env.CLONE_DIR}}/${{env.DOCKERFILE}}
-          tags: ${{ env.LOCAL_TESTER_IMAGE }}
+          file: ${{env.CLONE_DIR}}/docker/Dockerfile
+          tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
           load: true
           context: ${{env.CLONE_DIR}}
           platforms: ${{ inputs.build-platform }}
@@ -130,11 +125,15 @@ jobs:
           make -C ${{ env.CLONE_DIR }} test-ci
         env:
           DEBUG: ${{ runner.debug }}
+          TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ${{ needs.config.outputs.TEST_ARTIFACT }}
-          path: ${{ env.CLONE_DIR }}/${{ env.LOCAL_TESTER_RESULTS }}/**
+          path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
 

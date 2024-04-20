@@ -4,32 +4,14 @@ run-name: |
 
 on:
   workflow_call:
-    inputs:
-      docker-flavor-config:
-        type: string
-        required: true
-      docker-tags-config:
-        type: string
-        required: true
-      release-tags:
-        type: string
-        required: true
-      release-tag-platforms:
-        type: string
-        required: true
-      test-tag:
-        type: string
-        required: true
-      test-tag-registry:
-        type: string
-        required: true
+
+  workflow_dispatch:
 
 concurrency:
   group: release-${{github.ref_type == 'branch' && 'nightly' || 'stable'}}-${{ github.ref }}-push-images
 
 env:
   CLONE_DIR: src/repo
-  DOCKERFILE: docker/release/Dockerfile
 
 permissions:
   contents: read
@@ -45,20 +27,24 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
-      - name: Configure push
+      - name: Configure workflow
         id: config
         shell: python
         run: |
           import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers.workflows.release_push import configure
-
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
           configure(
-            release_tags="""\
-              ${{inputs.release-tags}}
-            """,
-            test_tag_registry="${{inputs.test-tag-registry}}",
-          )
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              DOCKER_BUILD_PLATFORMS = cfg.dyn.docker.build_platforms
+              DOCKER_FLAVOR_CONFIG = cfg.dyn.docker.flavor_config
+              DOCKER_TAGS_CONFIG = cfg.dyn.docker.tags_config
+              LOGIN_DOCKERHUB = cfg.dyn.release.login_dockerhub
+              LOGIN_GITHUB = cfg.dyn.release.login_github
+              PRERELEASE_IMAGE = cfg.dyn.prerelease.image
+              RELEASE_REPOS = cfg.dyn.release.release_repos
+            """)
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -70,9 +56,9 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v5
         with:
-          images: ${{ inputs.release-tags }}
-          tags: ${{ inputs.docker-tags-config }}
-          flavor: ${{ inputs.docker-flavor-config }}
+          images: ${{ steps.config.outputs.RELEASE_REPOS }}
+          tags: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+          flavor: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
     
@@ -94,12 +80,12 @@ jobs:
       - name: Build and push images to GitHub
         uses: docker/build-push-action@v5
         with:
-          file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+          file: ${{ env.CLONE_DIR }}/docker/release/Dockerfile
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           annotations: ${{ steps.metadata.outputs.annotations }}
           push: true
           context: ${{ env.CLONE_DIR }}
-          platforms: ${{ inputs.release-tag-platforms }}
+          platforms: ${{ steps.config.outputs.RELEASE_PLATFORMS }}
           build-args: |
-            BASE_IMAGE=${{ inputs.test-tag }}
+            BASE_IMAGE=${{ steps.config.outputs.PRERELEASE_IMAGE }}

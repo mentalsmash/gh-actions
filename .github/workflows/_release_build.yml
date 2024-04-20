@@ -1,31 +1,14 @@
 name: Release Step (Build Image)
 run-name: |
-  release - build image on ${{inputs.base-tag}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+  release (build) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
 
 on:
   workflow_call:
-    inputs:
-      base-tag:
-        type: string
-        required: true
-      build-tag:
-        type: string
-        required: true
-      build-tag-registry:
-        type: string
-        required: true
-      build-tag-platforms:
-        type: string
-        required: true
-      docker-tags-config:
-        type: string
-        required: true
-      docker-flavor-config:
-        type: string
-        required: true
+
+  workflow_dispatch:
 
 concurrency:
-  group: release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}-${{github.ref}}-build
+  group: release-${{github.ref}}-build
 
 permissions:
   contents: read
@@ -33,7 +16,6 @@ permissions:
 
 env:
   CLONE_DIR: src/repo
-  DOCKERFILE: docker/Dockerfile
 
 jobs:
   build:
@@ -44,6 +26,25 @@ jobs:
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
+
+      - name: Configure workflow
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
+          configure(
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              DOCKER_BASE_IMAGE = cfg.release.base_image
+              DOCKER_TAGS_CONFIG = cfg.dyn.docker.tags_config
+              DOCKER_FLAVOR_CONFIG = cfg.dyn.docker.flavor_config
+              DOCKER_BUILD_PLATFORMS = cfg.dyn.docker.build_platforms
+              LOGIN_DOCKERHUB = cfg.dyn.prerelease.login_dockerhub
+              LOGIN_GITHUB = cfg.dyn.prerelease.login_github
+              PRERELEASE_REPO = cfg.release.prerelease_repo
+            """)
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -56,14 +57,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ inputs.build-tag }}
-          tags: ${{ inputs.docker-tags-config }}
-          flavor: ${{ inputs.docker-flavor-config }}
+            ${{ steps.config.outputs.PRERELEASE_REPO }}
+          tags: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+          flavor: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
 
       - name: Log in to GitHub
-        if: inputs.build-tag-registry == 'github'
+        if: steps.config.outputs.LOGIN_GITHUB
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -71,7 +72,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Log in to Docker HUb
-        if: inputs.build-tag-registry == 'dockerhub'
+        if: steps.config.outputs.LOGIN_DOCKERHUB
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -80,13 +81,12 @@ jobs:
       - name: Build and push test images
         uses: docker/build-push-action@v5
         with:
-          file: ${{ env.CLONE_DIR }}/${{ env.DOCKERFILE }}
+          file: ${{ env.CLONE_DIR }}/docker/Dockerfile
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           annotations: ${{ steps.metadata.outputs.annotations }}
           push: true
           context: ${{ env.CLONE_DIR }}
-          platforms: ${{ inputs.build-tag-platforms }}
+          platforms: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
           build-args: |
-            BASE_IMAGE=${{ inputs.base-tag }}
-
+            BASE_IMAGE=${{ steps.config.outputs.DOCKER_BASE_IMAGE }}

@@ -7,14 +7,8 @@ concurrency:
 
 on:
   workflow_call:
-    inputs:
-      base-image:
-        type: string
-        required: true
-      badge-version:
-        type: string
-      badge-base-img:
-        type: string
+
+  workflow_dispatch:
 
 env:
   CLONE_DIR: src/repo
@@ -29,36 +23,42 @@ jobs:
         path: ${{ env.CLONE_DIR }}
         submodules: true
 
-    - name: Generate badge configuration
+    - name: Configure workflow
       id: config
       shell: python
       run: |
         import sys
-        sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-        from action_helpers.workflows.release_badges import configure
-
+        sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+        from workflows_pyconfig import configure
         configure(
-          clone_dir="${{env.CLONE_DIR}}",
-          ref_type="${{github.ref_type}}",
-          ref_name="${{github.ref_name}}",
-          repository="${{github.repository}}")
+          github="""${{ toJson(github) }}""",
+          outputs="""\
+            BADGE_BASE_IMAGE_COLOR = cfg.dyn.badge.base_image.color
+            BADGE_BASE_IMAGE_FILENAME = cfg.dyn.badge.base_image.filename
+            BADGE_BASE_IMAGE_GIST = cfg.dyn.badge.base_image.gist
+            BADGE_BASE_IMAGE_MESSAGE = cfg.dyn.badge.base_image.message
+            BADGE_VERSION_COLOR = cfg.dyn.badge.version.color
+            BADGE_VERSION_FILENAME = cfg.dyn.badge.version.filename
+            BADGE_VERSION_GIST = cfg.dyn.badge.version.gist
+            BADGE_VERSION_MESSAGE = cfg.dyn.badge.version.message
+          """)
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
-        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
-        gistID: ${{ inputs.badge-version }}
-        filename: ${{ steps.config.outputs.BADGE_FILENAME }}-version.json
         label: version
-        message: ${{ steps.config.outputs.VERSION }}
-        color: ${{ steps.config.outputs.COLOR_VERSION }}
+        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
+        color: ${{ steps.config.outputs.BADGE_VERSION_COLOR }}
+        filename: ${{ steps.config.outputs.BADGE_VERSION_FILENAME }}
+        gistID: ${{ steps.config.outputs.BADGE_VERSION_GIST }}
+        message: ${{ steps.config.outputs.BADGE_VERSION_MESSAGE }}
 
     - name: Update base image badge
       uses: schneegans/dynamic-badges-action@v1.7.0
       with:
-        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
-        gistID: ${{ inputs.badge-base-img }}
-        filename: ${{ steps.config.outputs.BADGE_FILENAME }}-base-img.json
         label: base image
-        message: ${{ inputs.base-image }}
-        color: ${{ steps.config.outputs.COLOR_BASE_IMG }}
+        auth: ${{ secrets.GIST_UPDATE_TOKEN }}
+        color: ${{ steps.config.outputs.BADGE_BASE_COLOR }}
+        filename: ${{ steps.config.outputs.BADGE_BASE_IMAGE_FILENAME }}
+        gistID: ${{ steps.config.outputs.BADGE_BASE_IMAGE }}
+        message: ${{ steps.config.outputs.BADGE_BASE_IMAGE_MESSGE }}

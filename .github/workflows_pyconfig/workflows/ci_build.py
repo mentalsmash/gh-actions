@@ -13,31 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import yaml
-from pathlib import Path
-
-from collections import namedtuple
 from typing import NamedTuple
 
-def project_config(
-    clone_dir: str,
-    github: str) -> tuple[NamedTuple, NamedTuple]:
-  def _dict_to_ntuple(key: str, val: dict) -> NamedTuple:
-    fields = {}
-    for k, v in val.items():
-      if isinstance(v, dict):
-        v = _dict_to_ntuple(k, v)
-      k = k.replace("-", "_")
-      fields[k] = v
-    
-    keys = list(fields.keys())
-    print("DEFINING TUPLE:", key, keys)
-    val_cls = namedtuple(key, keys)
-    return val_cls(**fields)
+from ..write_output import write_output
 
-  settings = _dict_to_ntuple(
-    "settings",
-    yaml.safe_load(Path(f"{clone_dir}/project.yml").read_text()))
-  github = _dict_to_ntuple("github", yaml.safe_load(github))
 
-  return settings, github
+def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
+  runner = cfg.ci.runners[inputs.build_platform]
+
+  repository_name = github.repository.replace("/", "-")
+  build_platform_label = cfg.dyn.build.platform.replace("/", "-")
+  base_image_tag = inputs.base_image.replace(":", "-")
+  ci_tester_image = f"{cfg.ci.ci_tester_repo}:{base_image_tag}"
+
+  test_id = f"ci-{build_platform_label}__{cfg.dyn.build.version}"
+  test_artifact = f"{repository_name}-test-{test_id}__{cfg.dyn.test_date}"
+
+  write_output(
+    {
+      "CI_RUNNER": runner,
+      "CI_TESTER_IMAGE": ci_tester_image,
+      "TEST_ARTIFACT": test_artifact,
+      "TEST_ID": test_id,
+    }
+  )

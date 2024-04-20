@@ -95,7 +95,9 @@ def output(*fields):
   if TabulateEnabled and TabulateOutput is None:
     try:
       TabulateOutput = subprocess.Popen(
-        ["column", "-t", "-s", "\t"], stdin=subprocess.PIPE, stderr=subprocess.PIPE
+        ["column", "-t", "-s", "\t"],
+        stdin=subprocess.PIPE,
+        stderr=subprocess.PIPE,
       )
       if TabulateColumns:
         columns = "\t".join(col.upper().replace("_", " ") for col in TabulateColumns)
@@ -216,7 +218,17 @@ def fzf_filter(
   # if prompt[-2:] != "> ":
   prompt += " (TAB: select, ESC: none)> "
 
-  fzf_cmd = ["fzf", "-0", "--tac", "--no-sort", "--multi", "--prompt", prompt, filter_arg, filter]
+  fzf_cmd = [
+    "fzf",
+    "-0",
+    "--tac",
+    "--no-sort",
+    "--multi",
+    "--prompt",
+    prompt,
+    filter_arg,
+    filter,
+  ]
   log.command(fzf_cmd)
   fzf = subprocess.Popen(fzf_cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
   if inputs:
@@ -312,7 +324,14 @@ class DataObject:
     # Parse a string of fields separated by tabs.
     assert len(obj_cls._fields) >= 1
     return re.compile(
-      "".join(("^", *(r"([^\t]+)[\t]+" for i in range(len(obj_cls._fields) - 1)), r"(.*)", "$"))
+      "".join(
+        (
+          "^",
+          *(r"([^\t]+)[\t]+" for i in range(len(obj_cls._fields) - 1)),
+          r"(.*)",
+          "$",
+        )
+      )
     )
 
   @classmethod
@@ -380,7 +399,13 @@ def symbol:
 
   @property
   def incomplete(self) -> bool:
-    return self.status in ["in_progress", "queued", "requested", "waiting", "pending"]
+    return self.status in [
+      "in_progress",
+      "queued",
+      "requested",
+      "waiting",
+      "pending",
+    ]
 
   ###############################################################################
   #
@@ -443,7 +468,10 @@ def symbol:
       prompt = "available runs"
     sorted_runs = partial(sorted, key=lambda r: r.created_at)
     fzf = fzf_filter(
-      filter=filter, inputs=sorted_runs(target_runs), prompt=prompt, noninteractive=noninteractive
+      filter=filter,
+      inputs=sorted_runs(target_runs),
+      prompt=prompt,
+      noninteractive=noninteractive,
     )
     return sorted_runs(_read_and_parse_runs(fzf.stdout))
 
@@ -463,7 +491,13 @@ def symbol:
     def _delete_run(run: WorkflowRun):
       if run.outcome == "NULL":
         run.cancel(noop=noop)
-      delete_cmd = ["gh", "api", "-X", "DELETE", f"/repos/{repo}/actions/runs/{run.id}"]
+      delete_cmd = [
+        "gh",
+        "api",
+        "-X",
+        "DELETE",
+        f"/repos/{repo}/actions/runs/{run.id}",
+      ]
       log.command(delete_cmd, check=True)
       if not noop:
         subprocess.run(delete_cmd, check=True)
@@ -539,7 +573,10 @@ class Package(NamedTuple):
       prompt = "available packages"
     sort_packages = partial(sorted, key=lambda p: p.updated_at)
     fzf = fzf_filter(
-      filter=filter, inputs=sort_packages(packages), prompt=prompt, noninteractive=noninteractive
+      filter=filter,
+      inputs=sort_packages(packages),
+      prompt=prompt,
+      noninteractive=noninteractive,
     )
     return sort_packages(_read_and_parse_package(fzf.stdout))
 
@@ -599,7 +636,10 @@ class PackageVersion(NamedTuple):
       prompt = f"available versions for {package}"
     sort_versions = partial(sorted, key=lambda p: p.updated_at)
     fzf = fzf_filter(
-      filter=filter, inputs=sort_versions(versions), prompt=prompt, noninteractive=noninteractive
+      filter=filter,
+      inputs=sort_versions(versions),
+      prompt=prompt,
+      noninteractive=noninteractive,
     )
     return sort_versions(_read_and_parse_versions(fzf.stdout))
 
@@ -636,7 +676,11 @@ class PackageVersion(NamedTuple):
       deleted.append(version)
     package_label = package if not org else f"{org}/{package}"
     if noop:
-      log.warning("[{}] {} version selected but not actually deleted", package_label, len(deleted))
+      log.warning(
+        "[{}] {} version selected but not actually deleted",
+        package_label,
+        len(deleted),
+      )
     else:
       log.warning("[{}] {} runs DELETED", package_label, len(deleted))
     return deleted
@@ -669,7 +713,12 @@ def pr_closed(
     log.info(" {}. {}", i + 1, run)
 
   if not merged:
-    log.warning("[{}][PR #{}] deleting all {} runs for unmerged PR", pr_no, repo, len(all_runs))
+    log.warning(
+      "[{}][PR #{}] deleting all {} runs for unmerged PR",
+      pr_no,
+      repo,
+      len(all_runs),
+    )
     removed = WorkflowRun.delete(repo, noop=noop, runs=all_runs)
     preserved = [run for run in all_runs if run not in removed]
     return workflow_run_action_result(removed, preserved)
@@ -706,7 +755,14 @@ def pr_closed(
 
   log.activity("[{}][PR #{}] listing good 'full validation' runs", repo, pr_no)
   full_validation_runs = list(
-    pr_runs(repo, pr_no, "'GOOD", "reviewed, 'approved", runs=all_runs, noninteractive=True)
+    pr_runs(
+      repo,
+      pr_no,
+      "'GOOD",
+      "reviewed, 'approved",
+      runs=all_runs,
+      noninteractive=True,
+    )
   )
   if not full_validation_runs:
     log.error("[{}][PR #{}] no good 'full validation' run!", repo, pr_no)
@@ -759,7 +815,11 @@ def pr_closed(
 # Perform cleanup procedures on a closed Pull Request
 ###############################################################################
 def pr_runs(
-  repo: str, pr_no: int, result: str | None = None, category: str | None = None, **select_args
+  repo: str,
+  pr_no: int,
+  result: str | None = None,
+  category: str | None = None,
+  **select_args,
 ) -> Generator[WorkflowRun, None, None]:
   filter = (
     f"{result+' ' if result else ''}'PR '#{pr_no} '[{category if category is not None else ''}"
@@ -806,7 +866,9 @@ def nightly_cleanup(repo: str, noop: bool = False) -> None:
   _ = _scan_runs("nighlty releases", "!'deb 'release !'cleanup '[nightly")
   _ = _scan_runs("nighlty DEB releases", "'deb 'release '[nightly")
   _ = _scan_runs(
-    "nighlty release cleanup jobs", "!'deb 'release 'cleanup '[nightly", remove_all=True
+    "nighlty release cleanup jobs",
+    "!'deb 'release 'cleanup '[nightly",
+    remove_all=True,
   )
 
   if preserved:
@@ -846,15 +908,27 @@ def define_parser() -> argparse.ArgumentParser:
   parser.set_defaults(action=None)
 
   parser.add_argument(
-    "-n", "--noop", help="Don't make any changes if possible.", default=False, action="store_true"
+    "-n",
+    "--noop",
+    help="Don't make any changes if possible.",
+    default=False,
+    action="store_true",
   )
 
   parser.add_argument(
-    "-R", "--raw", help="Don't process output (e.g. tabulate)", default=False, action="store_true"
+    "-R",
+    "--raw",
+    help="Don't process output (e.g. tabulate)",
+    default=False,
+    action="store_true",
   )
 
   parser.add_argument(
-    "-i", "--interactive", help="Run in interactive mode.", default=False, action="store_true"
+    "-i",
+    "--interactive",
+    help="Run in interactive mode.",
+    default=False,
+    action="store_true",
   )
 
   parser.add_argument("-c", "--current", help="Calling workflow id.", default=None)
@@ -865,7 +939,10 @@ def define_parser() -> argparse.ArgumentParser:
     "pr-closed", help="Clean up workflow runs for a closed PR."
   )
   parser_pr_closed.add_argument(
-    "-r", "--repository", help="Target GitHub repository (owner/repo).", required=True
+    "-r",
+    "--repository",
+    help="Target GitHub repository (owner/repo).",
+    required=True,
   )
   parser_pr_closed.add_argument("-N", "--number", help="PR number.", required=True, type=int)
   parser_pr_closed.add_argument(
@@ -874,18 +951,28 @@ def define_parser() -> argparse.ArgumentParser:
 
   parser_pr_ls_runs = subparsers.add_parser("pr-runs", help="List existing workflow runs for a PR.")
   parser_pr_ls_runs.add_argument(
-    "-r", "--repository", help="Target GitHub repository (owner/repo).", required=True
+    "-r",
+    "--repository",
+    help="Target GitHub repository (owner/repo).",
+    required=True,
   )
   parser_pr_ls_runs.add_argument("-N", "--number", help="PR number.", required=True, type=int)
 
   parser_ls_runs = subparsers.add_parser(
-    "select-runs", help="List all workflow runs, or a subset matching an fzf filter."
+    "select-runs",
+    help="List all workflow runs, or a subset matching an fzf filter.",
   )
   parser_ls_runs.add_argument(
-    "-r", "--repository", help="Target GitHub repository (owner/repo).", required=True
+    "-r",
+    "--repository",
+    help="Target GitHub repository (owner/repo).",
+    required=True,
   )
   parser_ls_runs.add_argument(
-    "-f", "--filter", help="Custom zfz filter to run in unattended mode.", default=None
+    "-f",
+    "--filter",
+    help="Custom zfz filter to run in unattended mode.",
+    default=None,
   )
   parser_ls_runs.add_argument(
     "-i",
@@ -896,13 +983,20 @@ def define_parser() -> argparse.ArgumentParser:
   )
 
   parser_delete_runs = subparsers.add_parser(
-    "delete-runs", help="Delete all workflow runs, or a subset matching an fzf filter."
+    "delete-runs",
+    help="Delete all workflow runs, or a subset matching an fzf filter.",
   )
   parser_delete_runs.add_argument(
-    "-r", "--repository", help="Target GitHub repository (owner/repo).", required=True
+    "-r",
+    "--repository",
+    help="Target GitHub repository (owner/repo).",
+    required=True,
   )
   parser_delete_runs.add_argument(
-    "-f", "--filter", help="Custom zfz filter to run in unattended mode.", default=None
+    "-f",
+    "--filter",
+    help="Custom zfz filter to run in unattended mode.",
+    default=None,
   )
   parser_delete_runs.add_argument(
     "-i",
@@ -913,11 +1007,15 @@ def define_parser() -> argparse.ArgumentParser:
   )
 
   parser_ls_pkgs = subparsers.add_parser(
-    "select-packages", help="List packages for an organization (or the current user)."
+    "select-packages",
+    help="List packages for an organization (or the current user).",
   )
   parser_ls_pkgs.add_argument("-o", "--org", help="Target GitHub organization.", default=None)
   parser_ls_pkgs.add_argument(
-    "-f", "--filter", help="Custom zfz filter to run in unattended mode.", default=None
+    "-f",
+    "--filter",
+    help="Custom zfz filter to run in unattended mode.",
+    default=None,
   )
 
   parser_ls_versions = subparsers.add_parser(
@@ -927,25 +1025,35 @@ def define_parser() -> argparse.ArgumentParser:
   parser_ls_versions.add_argument("-p", "--package", help="Target package.", required=True)
   parser_ls_versions.add_argument("-o", "--org", help="Target GitHub organization.", default=None)
   parser_ls_versions.add_argument(
-    "-f", "--filter", help="Custom zfz filter to run in unattended mode.", default=None
+    "-f",
+    "--filter",
+    help="Custom zfz filter to run in unattended mode.",
+    default=None,
   )
 
   parser_delete_versions = subparsers.add_parser(
-    "delete-versions", help="Delete all workflow runs, or a subset matching an fzf filter."
+    "delete-versions",
+    help="Delete all workflow runs, or a subset matching an fzf filter.",
   )
   parser_delete_versions.add_argument("-p", "--package", help="Target package.", required=True)
   parser_delete_versions.add_argument(
     "-o", "--org", help="Target GitHub organization.", default=None
   )
   parser_delete_versions.add_argument(
-    "-f", "--filter", help="Custom zfz filter to run in unattended mode.", default=None
+    "-f",
+    "--filter",
+    help="Custom zfz filter to run in unattended mode.",
+    default=None,
   )
 
   parser_nightly_cleanup = subparsers.add_parser(
     "nightly-cleanup", help="Clean up workflow runs for nightly releases"
   )
   parser_nightly_cleanup.add_argument(
-    "-r", "--repository", help="Target GitHub repository (owner/repo).", required=True
+    "-r",
+    "--repository",
+    help="Target GitHub repository (owner/repo).",
+    required=True,
   )
 
   return parser
@@ -958,7 +1066,10 @@ def dispatch_action(args: argparse.Namespace) -> None:
   try:
     if args.action == "pr-closed":
       result = pr_closed(
-        repo=args.repository, pr_no=args.number, merged=args.merged, noop=args.noop
+        repo=args.repository,
+        pr_no=args.number,
+        merged=args.merged,
+        noop=args.noop,
       )
       tabulate_columns("action", *WorkflowRun._fields)
       for removed, run in result:
@@ -974,7 +1085,10 @@ def dispatch_action(args: argparse.Namespace) -> None:
     elif args.action == "delete-runs":
       tabulate_columns(*WorkflowRun._fields)
       for run in WorkflowRun.delete(
-        repo=args.repository, filter=args.filter, noop=args.noop, input=args.input
+        repo=args.repository,
+        filter=args.filter,
+        noop=args.noop,
+        input=args.input,
       ):
         output(str(run))
     elif args.action == "select-packages":

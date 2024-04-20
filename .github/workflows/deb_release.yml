@@ -16,16 +16,14 @@ permissions:
   packages: read
 
 env:
-  # [IMPLEMENTME] Configure variables
   CLONE_DIR: src/repo
 
 jobs:
-  check-trigger:
+  config:
     runs-on: ubuntu-latest
     outputs:
-      DO_BUILD: ${{steps.config.outputs.DO_BUILD}}
       DEB_BASE_IMAGES: ${{steps.config.outputs.DEB_BASE_IMAGES}}
-      DEB_PLATFORMS: ${{steps.config.outputs.DEB_PLATFORMS}}
+      DEB_BUILD_PLATFORMS: ${{steps.config.outputs.DEB_BUILD_PLATFORMS}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
       - name: Clone source repository
@@ -34,56 +32,50 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
-      - name: "Generate test configuration"
+      - name: Configure workflow
         id: config
         shell: python
         run: |
           import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers.workflows.deb_release import configure
-
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
           configure(
-            event_action="${{github.event.action}}",
-            event_name="${{github.event_name}}",
-            ref_type="${{github.ref_type}}",
-            ref_name="${{github.ref_name}}",
-            repository="${{github.repository}}")
-
-      - name: "Fail if upstream job failed"
-        run: |
-          echo "upstream job for ${{github.ref_type}} ${{github.ref_name}} failed with conclusion '${{github.event.workflow_run.conclusion}}'"
-          exit 1
-        if: github.event_name == 'workflow_run' && steps.config.outputs.DO_BUILD && github.event.workflow_run.conclusion != 'success'
+            workflow="deb_release",
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              DEB_BASE_IMAGES = cfg.dyn.debian.base_images_matrix
+              DEB_BUILD_PLATFORMS = cfg.dyn.debian.build_platforms_matrix
+              DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
+            """)
 
   build-packages:
-    needs: check-trigger
-    if: needs.check-trigger.outputs.DO_BUILD
+    needs: config
     strategy:
       matrix:
-        base-tag: ${{ fromJson(needs.check-trigger.outputs.DEB_BASE_IMAGES ) }}
-        platform: ${{ fromJson(needs.check-trigger.outputs.DEB_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.config.outputs.DEB_BASE_IMAGES ) }}
+        build-platform: ${{ fromJson(needs.config.outputs.DEB_BUILD_PLATFORMS) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
     with:
-      base-tag: ${{ matrix.base-tag }}
-      platform: ${{ matrix.platform }}
+      base-image: ${{ matrix.base-image }}
+      build-platform: ${{ matrix.build-platform }}
 
   publish_release:
     needs:
       - build-packages
-      - check-trigger
+      - config
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        pattern: ${{ needs.check-trigger.outputs.DEB_ARTIFACTS_PREFIX }}*
-        path: ${{ github.workspace }}/debian-dist
+        pattern: ${{ needs.config.outputs.DEB_ARTIFACTS_PREFIX }}*
+        path: ${{ github.workspace }}/artifacts
         merge-multiple: true
 
     - name: Create new release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          debian-dist/*.deb
+          artifacts/*.deb

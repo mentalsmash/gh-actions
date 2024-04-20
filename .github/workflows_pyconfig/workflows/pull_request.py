@@ -13,37 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+import json
 import subprocess
+from typing import NamedTuple
 from pathlib import Path
 
-from action_helpers.write_output import write_output
+from ..write_output import write_output
 
-def configure(
-    clone_dir: Path,
-    pr_no: int,
-    event_name: str,
-    event_action: str,
-    is_draft: bool,
-    review_state: str | None = None) -> tuple[bool, bool, bool]:
+
+def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
+  clone_dir = Path(__file__).parent.parent.parent.parent
+
+  is_draft = bool(github.event.pull_request.draft)
+  pr_no = github.event.pull_request.number
+
+  if github.event_name == "pull_request_review":
+    review_state = github.event.review.state
+  else:
+    review_state = None
+
   result_full = False
+  result_deb = False
   result_basic = False
 
   review_state = review_state or ""
 
   print(f"Configuring PR {pr_no} job:")
   print(f"- draft: {is_draft}")
-  print(f"- event: {event_name}")
-  print(f"- action: {event_action}")
+  print(f"- event: {github.event_name}")
+  print(f"- action: {github.event.action}")
   print(f"- review: {review_state}")
 
-  if event_name == "pull_request_review" and review_state == "approved":
+  if github.event_name == "pull_request_review" and review_state == "approved":
     # A new review was submitted, and the review state is "approved":
     # perform a full validation (ci build on more platforms + deb validation)
-    print(f"PR {pr_no} reviewed and approved", "" if not is_draft else "(still in draft)")
+    print(
+      f"PR {pr_no} reviewed and approved",
+      "" if not is_draft else "(still in draft)",
+    )
     result_full = True
+    result_deb = True
     # perform a basic validation if the PR was approved while still in draft
     result_basic = is_draft
-  elif event_name == "pull_request" and not is_draft:
+  elif github.event_name == "pull_request" and not is_draft:
     # The PR was updated, and it is not a draft: perform a basic validation if:
     # - PR.state == 'opened':
     #   -> PR opened as non-draft, perform an initial check
@@ -55,32 +67,53 @@ def configure(
     #   -> PR moved out of draft, run basic validation only if not already 'approved'.
     #      (assumption: a basic validation was already performed on the `pull_request_review`
     #       event for the approval.)
-    print(f"PR {pr_no} updated ({event_action})")
-    if event_action in ("opened", "synchronize"):
+    print(f"PR {pr_no} updated ({github.event.action})")
+    if github.event.action in ("opened", "synchronize"):
       result_basic = True
-    elif event_action == "ready_for_review":
+    elif github.event.action == "ready_for_review":
       # (assumption: if the PR is not "mergeable" it must have not been approved.
       # Ideally: we would just query the review state, but that doesn't seem to
       # be available on the pull_request object, see:
       # https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request)
       # So we use the GitHub API to query the state,
       # see: https://stackoverflow.com/a/77647838
-      subprocess.run([
-        "gh", "repo", "set-default", clone_dir
-      ], check=True)
-      review_state = subprocess.run([
-        "gh", "pr", "view", str(pr_no), "--json", "reviewDecision", "--jq", ".reviewDecision"
-      ], cwd=clone_dir, stdout=subprocess.PIPE).stdout.decode().strip()
+      subprocess.run(["gh", "repo", "set-default", clone_dir], check=True)
+      review_state = (
+        subprocess.run(
+          [
+            "gh",
+            "pr",
+            "view",
+            str(pr_no),
+            "--json",
+            "reviewDecision",
+            "--jq",
+            ".reviewDecision",
+          ],
+          cwd=clone_dir,
+          stdout=subprocess.PIPE,
+        )
+        .stdout.decode()
+        .strip()
+      )
       result_basic = review_state != "approved"
 
-  print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}")
+  print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
 
-  write_output({
-    "VALIDATE_FULL": result_full,
-    "VALIDATE_BASIC": result_basic,
-  }, [
-    "BASIC_VALIDATION_PLATFORMS",
-    "BASIC_VALIDATION_BASE_IMAGES",
-    "FULL_VALIDATION_PLATFORMS",
-    "FULL_VALIDATION_BASE_IMAGES",
-  ])
+  write_output(
+    {
+      "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
+      "BASIC_VALIDATION_BUILD_PLATFORMS": json.dumps(
+        cfg.pull_request.validation.basic.build_platforms
+      ),
+      "DEB_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.deb.base_images),
+      "DEB_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.deb.build_platforms),
+      "FULL_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.full.base_images),
+      "FULL_VALIDATION_BUILD_PLATFORMS": json.dumps(
+        cfg.pull_request.validation.full.build_platforms
+      ),
+      "VALIDATE_FULL": result_full,
+      "VALIDATE_DEB": result_deb,
+      "VALIDATE_BASIC": result_basic,
+    }
+  )

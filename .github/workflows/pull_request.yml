@@ -34,12 +34,15 @@ jobs:
   check-trigger:
     runs-on: ubuntu-latest
     outputs:
-      VALIDATE_BASIC: ${{ steps.config.outputs.VALIDATE_BASIC }}
-      VALIDATE_FULL: ${{ steps.config.outputs.VALIDATE_FULL }}
-      BASIC_VALIDATION_PLATFORMS: ${{ steps.config.outputs.BASIC_VALIDATION_PLATFORMS }}
+      BASIC_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.BASIC_VALIDATION_BUILD_PLATFORMS }}
       BASIC_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.BASIC_VALIDATION_BASE_IMAGES }}
-      FULL_VALIDATION_PLATFORMS: ${{ steps.config.outputs.FULL_VALIDATION_PLATFORMS }}
+      DEB_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.DEB_VALIDATION_BASE_IMAGES }}
+      DEB_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.DEB_VALIDATION_BUILD_PLATFORMS }}
       FULL_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.FULL_VALIDATION_BASE_IMAGES }}
+      FULL_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.FULL_VALIDATION_BUILD_PLATFORMS }}
+      VALIDATE_BASIC: ${{ steps.config.outputs.VALIDATE_BASIC }}
+      VALIDATE_DEB: ${{ steps.config.outputs.VALIDATE_DEB }}
+      VALIDATE_FULL: ${{ steps.config.outputs.VALIDATE_FULL }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -49,29 +52,23 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
-      - name: "Generate job configuration"
+      - name: Configure workflow
         id: config
         shell: python
         run: |
           import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers.workflows.pull_request import configure
-
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
           configure(
-            clone_dir="${{ env.CLONE_DIR }}",
-            pr_no=${{ github.event.pull_request.number }},
-            event_name="${{ github.event_name }}",
-            event_action="${{ github.event.action }}",
-            is_draft=bool("${{ github.event.pull_request.draft && 'True' || '' }}"),
-            review_state="${{ github.event_name == 'pull_request_review' &&  github.event.review.state || ''}}",
-          )
+            workflow="pull_request",
+            github="""${{ toJson(github) }}""")
 
   basic-validation:
     needs: check-trigger
     if: ${{ needs.check-trigger.outputs.VALIDATE_BASIC }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_PLATFORMS) }}
+        build-platform: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BUILD_PLATFORMS) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BASE_IMAGES) }}
     uses: ./.github/workflows/_ci_build.yml
     secrets: inherit
@@ -84,7 +81,7 @@ jobs:
     if: ${{ needs.check-trigger.outputs.VALIDATE_FULL }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_PLATFORMS) }}
+        build-platform: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BUILD_PLATFORMS) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BASE_IMAGES) }}
         # [IMPLEMENTME] These values are "hard-coded" and must be updated manually here
         exclude:
@@ -98,14 +95,14 @@ jobs:
 
   deb-validation:
     needs: check-trigger
-    if: ${{ needs.check-trigger.outputs.VALIDATE_FULL }}
+    if: ${{ needs.check-trigger.outputs.VALIDATE_DEB }}
     strategy:
       matrix:
-        base-tag: ["ubuntu:22.04"]
-        platform: [amd64]
+        build-platform: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BASE_IMAGES) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
     with:
-      base-tag: ${{ matrix.base-tag }}
-      platform: ${{ matrix.platform }}
+      base-image: ${{ matrix.base-image }}
+      build-platform: ${{ matrix.build-platform }}
 

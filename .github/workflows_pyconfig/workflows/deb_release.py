@@ -14,21 +14,22 @@
 # limitations under the License.
 ###############################################################################
 from action_helpers.write_output import write_output
-from action_helpers.extract_registries import extract_registries
+
 
 def configure(
-  release_tags: str,
-  test_tag_registry: str,
-) -> None:
-  release_tags = [
-    tag.strip()
-    for tag in release_tags.strip().splitlines()
-  ]
-  registries = extract_registries(release_tags)
-  registries.add(test_tag_registry)
-  write_output({
-    "LOGIN_DOCKERHUB": "dockerhub" in registries,
-    "LOGIN_GITHUB": "github" in registries,
-  })
-
-
+  deb_artifacts_prefix: str,
+  deb_platforms: str,
+  deb_images: str,
+  event_name: str,
+  ref_name: str,
+  ref_type: str,
+) -> tuple[bool, bool, bool]:
+  deb_build = (event_name == "workflow_run" and ref_name == "master") or ref_type == "tag"
+  write_output(
+    {
+      "DEB_BUILD": deb_build,
+      "DEB_IMAGES": deb_images,
+      "DEB_PLATFORMS": deb_platforms,
+      "DEB_ARTIFACTS_PREFIX": deb_artifacts_prefix,
+    }
+  )

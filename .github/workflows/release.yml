@@ -3,6 +3,8 @@ run-name: |
   release [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - master
@@ -11,7 +13,7 @@ on:
       - '!*/**'
 
 concurrency:
-  group: release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -19,39 +21,13 @@ permissions:
   packages: write
 
 env:
-  # Local directory where to clone the repository
   CLONE_DIR: src/repo
 
 jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      # Gist ID for the "base image" release badge
-      BADGE_BASE_IMG: ${{steps.config.outputs.BADGE_BASE_IMG}}
-      # Gist ID for the "version" release badge
-      BADGE_VERSION: ${{steps.config.outputs.BADGE_VERSION}}
-      # Re-exported env BASE_TAG
-      BASE_TAG: ${{steps.config.outputs.BASE_TAG}}
-      # Re-exported env PRERELEASE_TAG
-      PRERELEASE_TAG: ${{steps.config.outputs.PRERELEASE_TAG}}
-      # Registry where the pre-release image is published
-      PRERELEASE_REGISTRY: ${{steps.config.outputs.PRERELEASE_REGISTRY}}
-      # Build platforms for the pre-release image and the final image
-      DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS}}
-      # "flavor" configuration for docker/metadata-action
-      DOCKER_FLAVOR_CONFIG: ${{steps.config.outputs.DOCKER_FLAVOR_CONFIG}}
-      # "tags" configuration for docker/metadata-action
-      DOCKER_TAGS_CONFIG: ${{steps.config.outputs.DOCKER_TAGS_CONFIG}}
-      # Pre-release image, full tag
-      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
-      # Push the final release image to DockerHub
-      RELEASE_TO_DOCKERHUB: ${{steps.config.outputs.RELEASE_TO_DOCKERHUB}}
-      # Push the final relase image to GitHUb
-      RELEASE_TO_GITHUB: ${{steps.config.outputs.RELEASE_TO_GITHUB}}
-      # JSON array with the platforms where to test the pre-release image
       TEST_PLATFORMS: ${{steps.config.outputs.TEST_PLATFORMS}}
-      # Re-exported env RELEASE_TAGS
-      RELEASE_TAGS: ${{steps.config.outputs.RELEASE_TAGS}}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -59,37 +35,29 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
+      - name: Configure workflow
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
+          configure(
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              TEST_PLATFORMS=cfg.dyn.test_platforms
+            """)
+      
       - name: Validate code
         run: |
           echo "Linting code..."
 
           # TODO validate code changes here
 
-      - name: Configure build
-        id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/scripts")
-          from action_helpers.workflows.release import configure
-
-          configure(
-            clone_dir="${{ env.CLONE_DIR }}",
-            github="""\
-              ${{ toJson(github) }}
-            """)
-
   build:
     needs: config
     uses: ./.github/workflows/_release_build.yml
     secrets: inherit
-    with:
-      base-tag: ${{ needs.config.outputs.BASE_TAG }}
-      build-tag: ${{ needs.config.outputs.PRERELEASE_TAG }}
-      build-tag-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
-      build-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
-      docker-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
-      docker-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
 
   test:
     needs:
@@ -101,8 +69,6 @@ jobs:
     uses: ./.github/workflows/_release_test.yml
     secrets: inherit
     with:
-      test-tag: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
-      test-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
       test-platform: ${{ matrix.test-platform }}
 
   push:
@@ -111,13 +77,6 @@ jobs:
       - test
     uses: ./.github/workflows/_release_push.yml
     secrets: inherit
-    with:
-      docker-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
-      docker-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
-      release-tags: ${{ needs.config.outputs.RELEASE_TAGS }}
-      release-tag-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
-      test-tag: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
-      test-tag-registry: ${{ needs.config.outputs.PRERELEASE_REGISTRY }}
 
   update_badges:
     needs:
@@ -125,10 +84,6 @@ jobs:
       - push
     uses: ./.github/workflows/_release_badges.yml
     secrets: inherit
-    with:
-      base-image: ${{ needs.config.outputs.BASE_TAG }}
-      badge-version: ${{ needs.config.outputs.BADGE_VERSION }}
-      badge-base-img: ${{ needs.config.outputs.BADGE_BASE_IMG }}
 
   deb_release:
     needs:
