@@ -27,7 +27,6 @@ permissions:
 
 env:
   CLONE_DIR: src/repo
-  ADMIN_IMAGE: ghcr.io/${{ github.repository }}-admin:latest
 
 jobs:
   cleanup_jobs:
@@ -42,6 +41,19 @@ jobs:
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
+
+      - name: Configure workflow
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
+          configure(
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              ADMIN_IMAGE = cfg.ci.admin_image
+            """)
       
       - name: Log in to GitHub
         uses: docker/login-action@v3
@@ -56,7 +68,7 @@ jobs:
             -v $(pwd):/workspace \
             -e GH_TOKEN=${GH_TOKEN} \
             -w /workspace \
-            ${ADMIN_IMAGE} \
+            ${{steps.config.outputs.ADMIN_IMAGE}} \
             ${{ env.CLONE_DIR }}/scripts/ci-admin \
               -c ${{ github.run_id }} \
               pr-closed \
