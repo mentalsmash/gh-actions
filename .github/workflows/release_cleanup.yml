@@ -8,6 +8,7 @@ on:
   workflow_run:
     workflows: ["Release"]
     types: [completed]
+    branches: [master]
 
 concurrency:
   group: release-cleanup-${{ github.ref }}
