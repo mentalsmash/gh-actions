@@ -50,7 +50,7 @@ jobs:
               LOGIN_GITHUB = cfg.dyn.prerelease.login_github
               PRERELEASE_IMAGE = cfg.dyn.prerelease.image
               TEST_DATE = cfg.dyn.test_date
-              TEST_RUNNERS_MATRIX=cfg.dyn.test_runners_matrix
+              TEST_RUNNERS_MATRIX=cfg.dyn.release.test_runners_matrix
             """)
 
   test:
