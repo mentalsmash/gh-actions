@@ -28,6 +28,10 @@ jobs:
     uses: ./.github/workflows/_release_build.yml
     secrets: inherit
 
+  deb_release:
+    uses: ./.github/workflows/deb_release.yml
+    secrets: inherit
+
   test:
     needs:
       - build
@@ -44,10 +48,6 @@ jobs:
     needs:
       - push
     uses: ./.github/workflows/_release_badges.yml
-    secrets: inherit
-
-  deb_release:
-    uses: ./.github/workflows/deb_release.yml
     secrets: inherit
 
   summarize:

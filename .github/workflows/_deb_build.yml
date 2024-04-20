@@ -73,7 +73,8 @@ jobs:
               LOGIN_DOCKERHUB = cfg.dyn.debian.login_dockerhub
               LOGIN_GITHUB = cfg.dyn.debian.login_github
               TEST_DATE = cfg.dyn.test_date
-            """)
+            """,
+            inputs="""${{ toJson(inputs) }}""")
 
   build-packages:
     needs: config
