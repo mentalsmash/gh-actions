@@ -17,33 +17,37 @@ from typing import NamedTuple
 
 
 def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
+  repo = github.repository.split("/")
+  repo_url = f"https://github.com/{github.repository}"
+
   def _image_url(image: str) -> str:
+    image_repo = image.split(":")[0]
+    repo_name = image_repo.split("/")[-1]
     if image.startswith("ghcr.io/"):
-      repo_name = image.split("/")[-1]
-      return f"{github.repositoryUrl}/pkgs/container/{repo_name}"
+      return f"{repo_url}/pkgs/container/{repo_name}"
     elif image.startswith(github.repository):
-      return f"https://hub.docker.com/r/{image}"
+      return f"https://hub.docker.com/r/{image_repo}"
     else:
       # unknown registry
-      return f"https://{image}"
+      return f"https://{image_repo}"
 
   return "\n".join(
     [
-      f"# {cfg.dyn.build.label.capitalize()} Release - {cfg.dyn.build.version}"
+      f"# {repo} - {cfg.dyn.build.label.capitalize()} Release - {cfg.dyn.build.version}"
       "\n"
       "\n"
       f"| Property | Value |"
       "\n"
       f"|----------|-------|"
       "\n"
-      f"| **Repository** | [`{github.repositoryUrl}`]({github.repositoryUrl}) |"
+      f"| **Commit SHA** | [`{github.sha}`]({repo_url}/tree/{github.sha}) |"
       "\n"
-      f"| **Commit SHA** | [`{github.sha}`]({github.repositoryUrl}/tree/{github.sha}) |"
+      f"| **Release Settings** | [settings.yml]({repo_url}/blob/{github.sha}/.github/workflows_pyconfig/settings.yml) |"
       "\n"
-      f"| **Release Settings** | [settings.yml]({github.repositoryUrl}/blob/{github.sha}/.github/workflows_pyconfig/settings.yml) |",
+      f"| **Pre-release Image** | [`{cfg.dyn.prerelease.image}`]({_image_url(cfg.dyn.prerelease.image)}) |",
       "".join(
         [
-          "| **Released Images** | <ul>",
+          "| **Release Images** | <ul>",
           *(f"<li>[`{img}`]({_image_url(img)})</li>" for img in cfg.dyn.release.images),
           "</ul> |",
         ]
