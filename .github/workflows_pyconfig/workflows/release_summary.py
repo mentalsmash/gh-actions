@@ -76,6 +76,8 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     "\n"
     f"| Property | Value |"
     "\n"
+    f"|----------|-------|"
+    "\n"
     f"| **CI Settings** | {settings_link} |"
     "\n"
     f"| **Commit** | [`{github.sha}`]({repo_url}/tree/{github.sha}) |"
