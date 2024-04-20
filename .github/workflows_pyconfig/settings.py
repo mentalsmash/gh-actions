@@ -43,7 +43,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   #############################################################################
   # Container Release settings
   #############################################################################
-  release_cfg = getattr(cfg.release.profile, build_profile)
+  release_cfg = getattr(cfg.release.profiles, build_profile)
 
   release_tag = f"{release_cfg.tag}{release_cfg.tag_suffix}"
 
