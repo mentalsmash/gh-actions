@@ -89,9 +89,11 @@ jobs:
         run: |
           case "$(uname -m)" in
             X86_64)
+              arch=amd64
               platform=linux/amd64
               ;;
             aarch64)
+              arch=arm64
               platform=linux/arm64
               ;;
             *)
@@ -99,6 +101,7 @@ jobs:
               ;;
           esac
           (
+            echo ARCH=${arch}
             echo PLATFORM=${platform}
           ) >> ${GITHUB_OUTPUT}
 
@@ -122,11 +125,11 @@ jobs:
           LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
           LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
           TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
-          TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}__${{ steps.platform.outputs.ARCH }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ needs.config.outputs.TEST_ARTIFACT }}
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}__${{ steps.platform.outputs.ARCH }}
           path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
