@@ -104,5 +104,5 @@ jobs:
     secrets: inherit
     with:
       base-image: ${{ matrix.base-image }}
-      build-platform: ${{ matrix.build-platform }}
+      build-architecture: ${{ matrix.build-architecture }}
 
