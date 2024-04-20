@@ -125,63 +125,62 @@ use it for a personal repository.
 
 ### Repository Initialization
 
-1. Create repository `my-org/my-repo` if it doesn't already exist, and clone it locally:
+1. Create your repository (e.g. `my-org/my-repo`) if it doesn't already exist.
+
+2. Import files from the reference repository into your repository:
 
    ```sh
+   # Clone the reference repository
+   git clone https://github.com/mentalsmash/ref-project-debdocker
+   export REF_PROJECT=$(pwd)/ref-project-docker
+
+   # Clone your repository
    git clone https://github.com/my-org/my-repo
-
    cd my-repo
+
+   # GitHub Action workflows and the helper Python scripts
+   mkdir -p .github/
+   cp -a ${REF_PROJECT}/.github/* .github/
+
+   # Makefile
+   cp -a ${REF_PROJECT}/Makefile ./Makefile
+
+   # Debian packaging files
+   mkdir -p debian/
+   cp -a ${REF_PROJECT}/debian/* .
+
+   # pre-commit and ruff configuration
+   cp -a ${REF_PROJECT}/.pre-commit-config.yaml ./.pre-commit-config.yaml
+   cp -a ${REF_PROJECT}/ruff.toml ./ruff.toml
    ```
 
-2. Import the GitHub Action workflows from the [.github/workflows](.github/workflows/) directory:
-
-   ```sh
-   mkdir -p .github/workflows
-
-   cp -a ${REF_PROJECT}/.github/workflows/* .github/workflows/
-   ```
-
-3. Import the helper scripts from the [scripts/](scripts/) directory:
-
-   ```sh
-   mkdir -p scripts/
-
-   cp -a ${REF_PROJECT}/scripts/* scripts/
-   ```
-
-4. Edit [.github/workflows/release.yml](.github/workflows/release.yml) with your preferred settings:
+3. Edit [.github/workflows_pyconfig/settings.yml](.github/workflows_pyconfig/settings.yml) with your preferred settings.
 
    - Required settings:
 
-     - **BASE_TAG**: the base image for the generated images (e.g. `ubuntu:22.04`).
+     - Replace all references to `mentalsmash/ref-project-debdocker` with your repository. Using `sed` if you want:
 
-     - **BUILD_PLATFORMS**: a comma-separated list of Docker build platforms (e.g. `linux/amd64,linux/arm64`).
-
-     - **PRERELEASE_TAG**: the "pre-release" image tag that will be used for testing and to derive
-       the release images after validation (e.g. `ghcr.io/my-org/my-repo-test`).
-
-     - **RELEASE_TAGS**: a newline-separated list of image tags that will be used to publish the
-       "release" image after validation. The list can be easily expressed with YAML's "block string" syntax:
-
-       ```yml
-       # Push to both GitHub and DockerHub
-       RELEASE_TAGS: |
-         ghcr.io/my-org/my-repo
-         my-org/my-repo
+       ```sh
+       sed -r -i -e "s:mentalsmash(.)ref-project-debdocker:my-org(\1)my-repo:g" .github/workflows_pyconfig/settings.yml
        ```
 
-     - **TAG_SUFFIX**: an optional suffix that will be appended to the
-        generated image tags. Not needed unless the project is supposed to generate multiple
-        "flavors" of the image (which requires creating multiple copies of the
-        [Release workflow](.github/workflows/release.yml), each one using a different suffix).
+     - `release.base_image`: the base image for the generated images (e.g. `ubuntu:22.04`).
+
+     - `release.build_platforms`: list of Docker build platforms (supported values: `linux/amd64`, `linux/arm64`).
+
+     - `release.prerelease_repo` the "pre-release" image tag that will be used for testing and to derive
+       the release images after validation (e.g. `ghcr.io/my-org/my-repo-test`).
+
+     - `release.repo`: a list of image repository that will be used to publish the
+       "release" image after validation.
 
    - The file also contains settings for "release badges", allowing you to specify the
      id of the "gists" used to store each badge's backing JSON object. Two badges are
      available for every type of released image (nightly, or stable):
 
-     - **BADGE_${TYPE}_BASE_IMAGE**: gist ID for a "base image" badge with the value of
+     - `release.badges.<type>.base_image`: gist ID for a "base image" badge with the value of
        **BASE_TAG**.
 
-     - **BADGE_${TYPE}_VERSION**: gist ID for a "version" badge containing a version 
+     - `release.badges.<type>.version`: gist ID for a "version" badge containing a version 
        identifier for the image (tag name for stable images, branch name + short SHA
        for nightly ones).

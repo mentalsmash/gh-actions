@@ -1,9 +1,9 @@
-name: Release Step (Update Badges)
+name: Release Step (Summary)
 run-name: |
-  release (update badges) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+  release (summary) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
 
 concurrency:
-  group: release-${{github.ref_type == 'branch' && 'nightly' || 'stable'}}-${{github.ref}}-update-badges
+  group: release-${{github.ref_type == 'branch' && 'nightly' || 'stable'}}-${{github.ref}}-summary
 
 on:
   workflow_call:
@@ -14,7 +14,7 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
-  update_badges:
+  summarize:
     runs-on: ubuntu-latest
     steps:
     - name: Clone source repository
