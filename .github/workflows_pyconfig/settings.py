@@ -138,7 +138,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
 
   badge_cfg = getattr(cfg.release.badges, build_label)
   badge_filename = github.repository.replace("/", "-") + "-badge-" + build_label
-  badge_base_image = badge_cfg.base_img._as_dict()
+  badge_base_image = badge_cfg.base_image._as_dict()
   badge_base_image["message"] = cfg.release.base_image
   badge_base_image["filename"] = f"{badge_filename}-base-image.json"
   badge_version = badge_cfg.version._as_dict()
