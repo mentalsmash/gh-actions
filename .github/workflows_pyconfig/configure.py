@@ -33,7 +33,7 @@ def _dict_to_tuple(key: str, val: dict) -> NamedTuple:
   for k, v in val.items():
     if isinstance(v, dict):
       v = _dict_to_tuple(k, v)
-    k = k.replace("-", "_")
+    k = k.replace("-", "_").replace("/", "_")
     fields[k] = v
 
   keys = list(fields.keys())
