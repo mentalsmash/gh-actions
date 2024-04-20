@@ -863,11 +863,10 @@ def nightly_cleanup(repo: str, noop: bool = False) -> None:
       removed.append(run)
     return runs
 
-  _ = _scan_runs("nighlty releases", "!'deb 'release !'cleanup '[nightly")
-  _ = _scan_runs("nighlty DEB releases", "'deb 'release '[nightly")
+  _ = _scan_runs("nighlty releases", "'release !cleanup '[nightly, ")
   _ = _scan_runs(
     "nighlty release cleanup jobs",
-    "!'deb 'release 'cleanup '[nightly",
+    "'release 'cleanup '[nightly, ",
     remove_all=True,
   )
 
