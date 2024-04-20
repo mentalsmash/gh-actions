@@ -37,6 +37,7 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   review_state = review_state or ""
 
   if is_draft:
+    # Don't perform any checks when the PR is in draft.
     print(f"PR #{pr_no} is still in draft, no validation required yet.")
   elif github.event_name == "pull_request_review" and review_state == "approved":
     # A new review was submitted, and the review state is "approved":
