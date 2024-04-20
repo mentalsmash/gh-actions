@@ -96,6 +96,9 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
       )
       result_basic = review_state != "approved"
 
+  # Debian testing requires a debian package.
+  result_deb = result_deb and (clone_dir / "debian" / "control").is_file()
+
   print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
 
   return {

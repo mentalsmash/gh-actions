@@ -22,6 +22,7 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
+      DEB_ENABLED: ${{steps.config.outputs.DEB_ENABLED}}
       DEB_BASE_IMAGES: ${{steps.config.outputs.DEB_BASE_IMAGES}}
       DEB_BUILD_ARCHITECTURES: ${{steps.config.outputs.DEB_BUILD_ARCHITECTURES}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
@@ -45,10 +46,12 @@ jobs:
               DEB_BASE_IMAGES = cfg.dyn.debian.base_images_matrix
               DEB_BUILD_ARCHITECTURES = cfg.dyn.debian.build_architectures_matrix
               DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
+              DEB_ENABLED = cfg.dyn.debian.enabled
             """)
 
   build-packages:
     needs: config
+    if: needs.config.outputs.DEB_ENABLED
     strategy:
       matrix:
         base-image: ${{ fromJson(needs.config.outputs.DEB_BASE_IMAGES ) }}
