@@ -6,6 +6,12 @@ on:
   pull_request:
     types:
       - closed
+    # Matching triggers with pull_request.yml
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**/*'
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       pr-number:
