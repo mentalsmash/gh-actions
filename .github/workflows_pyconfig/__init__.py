@@ -153,6 +153,7 @@ def configuration(
   as_tuple: bool = True,
 ) -> tuple[tuple, tuple, tuple | dict]:
   github = _dict_to_tuple("github", json.loads(github.strip()))
+  inputs = (inputs or "").strip()
   if inputs:
     inputs = _dict_to_tuple("inputs", json.loads(inputs.strip()))
 
