@@ -38,7 +38,7 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      CI_RUNNER: ${{ steps.config.outputs.RUNNER }}
+      CI_RUNNER: ${{ steps.config.outputs.CI_RUNNER }}
       CI_TESTER_IMAGE: ${{ steps.config.outputs.CI_TESTER_IMAGE }}
       LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
       LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
