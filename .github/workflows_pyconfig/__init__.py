@@ -30,6 +30,9 @@ from .settings import settings
 def _dict_to_tuple(key: str, val: dict) -> NamedTuple:
   fields = {}
   for k, v in val.items():
+    if k.startswith("_"):
+      # field unsupported by namedtuple
+      continue
     if isinstance(v, dict):
       v = _dict_to_tuple(k, v)
     k = k.replace("-", "_").replace("/", "_")
