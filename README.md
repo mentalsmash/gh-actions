@@ -145,9 +145,20 @@ use it for a personal repository.
    # Makefile
    cp -a ${REF_PROJECT}/Makefile ./Makefile
 
+   # Docker compose configuration
+   cp -a ${REF_PROJECT}/compose.yml ./compose.yml
+
+   # Docker build files
+   mkdir -p docker/
+   cp -a ${REF_PROJECT}/docker/* ./docker/
+
+   # Helper scripts
+   mkdir -p scripts/
+   cp -a ${REF_PROJECT}/scripts/* ./scripts/
+
    # Debian packaging files
    mkdir -p debian/
-   cp -a ${REF_PROJECT}/debian/* .
+   cp -a ${REF_PROJECT}/debian/* ./debian/
 
    # pre-commit and ruff configuration
    cp -a ${REF_PROJECT}/.pre-commit-config.yaml ./.pre-commit-config.yaml
@@ -156,13 +167,13 @@ use it for a personal repository.
 
 3. Edit [.github/workflows_pyconfig/settings.yml](.github/workflows_pyconfig/settings.yml) with your preferred settings.
 
-   - Required settings:
+   - Replace all references to `mentalsmash/ref-project-debdocker` with your repository. Using `sed` if you want:
 
-     - Replace all references to `mentalsmash/ref-project-debdocker` with your repository. Using `sed` if you want:
+     ```sh
+     sed -r -i -e "s:mentalsmash(.)ref-project-debdocker:my-org(\1)my-repo:g" .github/workflows_pyconfig/settings.yml
+     ```
 
-       ```sh
-       sed -r -i -e "s:mentalsmash(.)ref-project-debdocker:my-org(\1)my-repo:g" .github/workflows_pyconfig/settings.yml
-       ```
+   - Common settings:
 
      - `release.base_image`: the base image for the generated images (e.g. `ubuntu:22.04`).
 
@@ -174,13 +185,3 @@ use it for a personal repository.
      - `release.repo`: a list of image repository that will be used to publish the
        "release" image after validation.
 
-   - The file also contains settings for "release badges", allowing you to specify the
-     id of the "gists" used to store each badge's backing JSON object. Two badges are
-     available for every type of released image (nightly, or stable):
-
-     - `release.badges.<type>.base_image`: gist ID for a "base image" badge with the value of
-       **BASE_TAG**.
-
-     - `release.badges.<type>.version`: gist ID for a "version" badge containing a version 
-       identifier for the image (tag name for stable images, branch name + short SHA
-       for nightly ones).

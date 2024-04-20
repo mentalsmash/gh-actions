@@ -53,7 +53,7 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     return f"[`{pkg}`]({url})"
 
   artifacts_dir = Path(github.workspace) / "artifacts"
-  deb_packages = list(artifacts_dir.glob("*"))
+  deb_packages = list(artifacts_dir.glob("*.deb"))
   deb_packages_list = "".join(
     [
       "<ul>",
