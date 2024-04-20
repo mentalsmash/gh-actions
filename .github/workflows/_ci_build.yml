@@ -70,7 +70,8 @@ jobs:
               LOGIN_DOCKERHUB = cfg.dyn.ci.login_dockerhub
               LOGIN_GITHUB = cfg.dyn.ci.login_github
               TEST_DATE = cfg.dyn.test_date
-            """)
+            """,
+            inputs="""${{ toJson(inputs) }}""")
       
       - name: Validate code
         run: |
