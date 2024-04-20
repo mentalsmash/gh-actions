@@ -98,7 +98,7 @@ jobs:
     if: ${{ needs.check-trigger.outputs.VALIDATE_DEB }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_PLATFORMS) }}
+        build-architecture: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_PLATFORMS) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BASE_IMAGES) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
