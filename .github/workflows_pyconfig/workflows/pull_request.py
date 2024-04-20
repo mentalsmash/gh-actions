@@ -81,6 +81,7 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
         )
         .stdout.decode()
         .strip()
+        .lower()
       )
       print(f"PR #{pr_no} detected review state: '{review_state}'")
       result_full = review_state == "approved"
