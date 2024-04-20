@@ -152,9 +152,9 @@ def configuration(
   inputs: str | None = None,
   as_tuple: bool = True,
 ) -> tuple[tuple, tuple, tuple | dict]:
-  github = _dict_to_tuple("github", json.loads(github))
+  github = _dict_to_tuple("github", json.loads(github.strip()))
   if inputs:
-    inputs = _dict_to_tuple("inputs", json.loads(inputs))
+    inputs = _dict_to_tuple("inputs", json.loads(inputs.strip()))
 
   cfg_file = Path(__file__).parent / "settings.yml"
   cfg_dict = yaml.safe_load(cfg_file.read_text())
