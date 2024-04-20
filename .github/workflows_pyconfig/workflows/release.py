@@ -32,9 +32,15 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
       f"# {cfg.dyn.build.label.capitalize()} Release - {cfg.dyn.build.version}"
       "\n"
       "\n"
-      f"| **Commit SHA** | `{github.sha}` |"
+      f"| Property | Value |"
       "\n"
-      f"| **Release Settings** | [setting.yml]({github.repositoryUrl}/blob/{github.sha}/.github/workflows_pyconfig/settings.yml) |",
+      f"|----------|-------|"
+      "\n"
+      f"| **Repository** | [`{github.repositoryUrl}`]({github.repositoryUrl}) |"
+      "\n"
+      f"| **Commit SHA** | [`{github.sha}`]({github.repositoryUrl}/tree/{github.sha}) |"
+      "\n"
+      f"| **Release Settings** | [settings.yml]({github.repositoryUrl}/blob/{github.sha}/.github/workflows_pyconfig/settings.yml) |",
       "".join(
         [
           "| **Released Images** | <ul>",
