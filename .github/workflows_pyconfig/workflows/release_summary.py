@@ -50,7 +50,7 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     if github.ref_type != "tag":
       return f"`{pkg.name}`"
     url = f"{repo_url}/releases/download/{github.ref_name}/{pkg.name}"
-    return f"[`{pkg}`]({url})"
+    return f"[`{pkg.name}`]({url})"
 
   artifacts_dir = Path(github.workspace) / "artifacts"
   deb_packages = list(artifacts_dir.glob("*.deb"))
@@ -64,17 +64,31 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
 
   summary_title = f"{cfg.dyn.build.label} release - {repo} - {cfg.dyn.build.version}"
 
+  if github.ref_type == "branch":
+    release_page = "N/A"
+  else:
+    release_page = f"[{github.ref_name}]({repo_url}/releases/tag/{github.ref_name})"
+
   return (
     f"# {summary_title}"
     "\n"
+    "## Configuration"
     "\n"
     f"| Property | Value |"
     "\n"
-    f"|----------|-------|"
+    f"| **CI Settings** | {settings_link} |"
     "\n"
-    f"| **Commit SHA** | [`{github.sha}`]({repo_url}/tree/{github.sha}) |"
+    f"| **Commit** | [`{github.sha}`]({repo_url}/tree/{github.sha}) |"
     "\n"
-    f"| **Release Settings** | {settings_link} |"
+    f"| **GitHub Release** | {release_page} |"
+    "\n"
+    "\n"
+    "## Artifacts"
+    "\n"
+    "\n"
+    f"| Type | Artifacts |"
+    "\n"
+    f"|------|-----------|"
     "\n"
     f"| **Pre-release Image** | {prerel_image_link} |"
     "\n"
