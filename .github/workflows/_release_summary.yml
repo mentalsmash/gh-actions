@@ -41,7 +41,23 @@ jobs:
             BADGE_VERSION_FILENAME = cfg.dyn.badge.version.filename
             BADGE_VERSION_GIST = cfg.dyn.badge.version.gist
             BADGE_VERSION_MESSAGE = cfg.dyn.badge.version.message
+            DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
           """)
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ steps.config.outputs.DEB_ARTIFACTS_PREFIX }}*
+        path: ${{ github.workspace }}/artifacts
+        merge-multiple: true
+
+    - name: Generate summary
+      shell: python
+      run: |
+        import sys
+        sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+        from workflows_pyconfig import summarize
+        summarize(workflow="release_summary", github="""${{ toJson(github) }}""")
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0

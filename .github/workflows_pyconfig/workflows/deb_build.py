@@ -21,10 +21,10 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   runner = json.dumps(getattr(cfg.ci.runners, f"linux_{inputs.build_architecture}"))
 
   deb_builder_tag = inputs.base_image.replace(":", "-").replace("/", "-")
-  repository_name = github.repository.replace("/", "-")
+  repo = github.repository.split("/")[-1]
   test_id = f"deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}"
-  test_artifact = f"{repository_name}-debtest-{test_id}__{cfg.dyn.test_date}"
-  deb_artifact = f"{repository_name}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}__{cfg.dyn.test_date}"
+  test_artifact = f"{repo}-debtest-{test_id}__{cfg.dyn.test_date}"
+  deb_artifact = f"{repo}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}__{cfg.dyn.test_date}"
 
   return {
     "DEB_ARTIFACT": deb_artifact,

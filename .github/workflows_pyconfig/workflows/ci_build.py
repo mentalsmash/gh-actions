@@ -20,13 +20,13 @@ from typing import NamedTuple
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   runner = json.dumps(getattr(cfg.ci.runners, inputs.build_platform.replace("/", "_")))
 
-  repository_name = github.repository.replace("/", "-")
+  repo = github.repository.split("/")[-1]
   build_platform_label = cfg.dyn.build.platform.replace("/", "-")
   base_image_tag = inputs.base_image.replace(":", "-")
   ci_tester_image = f"{cfg.ci.ci_tester_repo}:{base_image_tag}"
 
   test_id = f"ci-{build_platform_label}__{cfg.dyn.build.version}"
-  test_artifact = f"{repository_name}-test-{test_id}__{cfg.dyn.test_date}"
+  test_artifact = f"{repo}-test-{test_id}__{cfg.dyn.test_date}"
 
   return {
     "CI_RUNNER": runner,
