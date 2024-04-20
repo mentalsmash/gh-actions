@@ -16,7 +16,7 @@
 from typing import NamedTuple
 
 
-def summarize(github: NamedTuple, input: NamedTuple, cfg: NamedTuple) -> str:
+def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
   def _image_url(image: str) -> str:
     if image.startswith("ghcr.io/"):
       repo_name = image.split("/")[-1]

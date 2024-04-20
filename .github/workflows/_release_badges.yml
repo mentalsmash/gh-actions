@@ -60,5 +60,5 @@ jobs:
         auth: ${{ secrets.GIST_UPDATE_TOKEN }}
         color: ${{ steps.config.outputs.BADGE_BASE_COLOR }}
         filename: ${{ steps.config.outputs.BADGE_BASE_IMAGE_FILENAME }}
-        gistID: ${{ steps.config.outputs.BADGE_BASE_IMAGE }}
+        gistID: ${{ steps.config.outputs.BADGE_BASE_IMAGE_GIST }}
         message: ${{ steps.config.outputs.BADGE_BASE_IMAGE_MESSGE }}
