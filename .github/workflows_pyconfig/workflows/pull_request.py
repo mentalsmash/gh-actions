@@ -36,12 +36,6 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
 
   review_state = review_state or ""
 
-  print(f"Configuring PR #{pr_no} job:")
-  print(f"- draft: {is_draft}")
-  print(f"- event: {github.event_name}")
-  print(f"- action: {github.event.action}")
-  print(f"- review: {review_state}")
-
   if is_draft:
     print(f"PR #{pr_no} is still in draft, no validation required yet.")
   elif github.event_name == "pull_request_review" and review_state == "approved":
@@ -88,12 +82,18 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
         .stdout.decode()
         .strip()
       )
+      print(f"PR #{pr_no} detected review state: '{review_state}'")
       result_full = review_state == "approved"
 
   # Debian testing requires a debian package, and for now we tie it to the full validation
   result_deb = result_full and (clone_dir / "debian" / "control").is_file()
 
-  print(f"PR #{pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
+  print(f"PR #{pr_no} job configuration:")
+  print(f"- draft: {is_draft}")
+  print(f"- event: {github.event_name}")
+  print(f"- action: {github.event.action}")
+  print(f"- review: {review_state}")
+  print(f"- triggers: basic={result_basic}, full={result_full}, deb={result_deb}")
 
   return {
     "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
