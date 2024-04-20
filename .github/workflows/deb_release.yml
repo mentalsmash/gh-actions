@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       DEB_BASE_IMAGES: ${{steps.config.outputs.DEB_BASE_IMAGES}}
-      DEB_BUILD_PLATFORMS: ${{steps.config.outputs.DEB_BUILD_PLATFORMS}}
+      DEB_BUILD_ARCHITECTURES: ${{steps.config.outputs.DEB_BUILD_ARCHITECTURES}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
       - name: Clone source repository
@@ -44,7 +44,7 @@ jobs:
             github="""${{ toJson(github) }}""",
             outputs="""\
               DEB_BASE_IMAGES = cfg.dyn.debian.base_images_matrix
-              DEB_BUILD_PLATFORMS = cfg.dyn.debian.build_platforms_matrix
+              DEB_BUILD_ARCHITECTURES = cfg.dyn.debian.build_architectures_matrix
               DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
             """)
 
@@ -53,12 +53,12 @@ jobs:
     strategy:
       matrix:
         base-image: ${{ fromJson(needs.config.outputs.DEB_BASE_IMAGES ) }}
-        build-platform: ${{ fromJson(needs.config.outputs.DEB_BUILD_PLATFORMS) }}
+        build-architecture: ${{ fromJson(needs.config.outputs.DEB_BUILD_ARCHITECTURES) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
     with:
       base-image: ${{ matrix.base-image }}
-      build-platform: ${{ matrix.build-platform }}
+      build-architecture: ${{ matrix.build-architecture }}
 
   publish_release:
     needs:

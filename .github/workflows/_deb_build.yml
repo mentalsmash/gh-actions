@@ -9,8 +9,8 @@ on:
         description: Base distribution image
         type: string
         required: true
-      build-platform:
-        description: Build platform
+      build-architecture:
+        description: Build architecture
         type: string
         required: true
 
@@ -19,12 +19,12 @@ on:
       base-image:
         type: string
         required: true
-      build-platform:
+      build-architecture:
         type: string
         required: true
 
 concurrency:
-  group: deb-release-${{ github.ref }}-${{inputs.build-platform}}-${{inputs.base-image}}
+  group: deb-release-${{ github.ref }}-${{inputs.build-architecture}}-${{inputs.base-image}}
   cancel-in-progress: true
 
 permissions:

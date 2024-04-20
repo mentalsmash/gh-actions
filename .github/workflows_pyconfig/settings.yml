@@ -25,7 +25,7 @@ debian:
   - ubuntu:22.04
   builder_repo: ghcr.io/mentalsmash/ref-project-debdocker-debian-builder
   dist_dir: debian-dist
-  platforms:
+  build_architectures:
   - amd64
   - arm64
 
@@ -38,17 +38,17 @@ pull_request:
       base_images:
       - ubuntu:22.04
       build_platforms:
-      - amd64
+      - linux/amd64
     full:
       base_images:
       - ubuntu:22.04
       build_platforms:
-      - arm64
+      - linux/arm64
     deb:
       base_images:
       - ubuntu:22.04
       build_platforms:
-      - amd64
+      - linux/amd64
 
 #############################################################################
 # Release settings

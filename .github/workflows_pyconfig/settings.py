@@ -120,7 +120,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
   test_platforms_matrix = json.dumps(cfg.release.build_platforms)
 
   debian_base_images_matrix = json.dumps(cfg.debian.base_images)
-  debian_build_platforms_matrix = json.dumps(cfg.debian.build_platforms)
+  debian_build_architectures_matrix = json.dumps(cfg.debian.build_architectures)
   debian_registries = _extract_registries(
     repo_org,
     [
@@ -160,7 +160,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
     },
     "debian": {
       "base_images_matrix": debian_base_images_matrix,
-      "build_platforms": debian_build_platforms_matrix,
+      "build_architectures_matrix": debian_build_architectures_matrix,
       "login_dockerhub": "dockerhub" in debian_registries,
       "login_github": "github" in debian_registries,
     },

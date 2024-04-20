@@ -19,13 +19,13 @@ from ..write_output import write_output
 
 
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
-  runner = cfg.ci.runners[f"linux/{inputs.build_platform}"]
+  runner = cfg.ci.runners[f"linux/{inputs.build_architecture}"]
 
   deb_builder_tag = inputs.base_image.replace(":", "-").replace("/", "-")
   repository_name = github.repository.replace("/", "-")
-  test_id = f"deb-{deb_builder_tag}-{inputs.build_platform}__{cfg.dyn.build.version}"
+  test_id = f"deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}"
   test_artifact = f"{repository_name}-debtest-{test_id}__{cfg.dyn.test_date}"
-  deb_artifact = f"{repository_name}-deb-{deb_builder_tag}-{inputs.build_platform}__{cfg.dyn.build.version}__{cfg.dyn.test_date}"
+  deb_artifact = f"{repository_name}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}__{cfg.dyn.test_date}"
 
   write_output(
     {
