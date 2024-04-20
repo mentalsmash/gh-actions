@@ -1,22 +1,14 @@
 name: Release Step (Test Image)
 run-name: |
-  release (test image on ${{inputs.test-platform}} [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+  release (test image) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
 
 on:
   workflow_call:
-    inputs:
-      test-platform:
-        type: string
-        required: true
 
   workflow_dispatch:
-    inputs:
-      test-platform:
-        type: string
-        required: true
 
 concurrency:
-  group: release-test-image-${{ github.ref }}-${{ inputs.test-platform }}
+  group: release-test-image-${{ github.ref }}
 
 env:
   CLONE_DIR: src/repo
@@ -33,7 +25,7 @@ jobs:
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
-      TEST_RUNNER: ${{ steps.config.outputs.TEST_RUNNER }}
+      TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -58,14 +50,15 @@ jobs:
               LOGIN_GITHUB = cfg.dyn.prerelease.login_github
               PRERELEASE_IMAGE = cfg.dyn.prerelease.image
               TEST_DATE = cfg.dyn.test_date
+              TEST_RUNNERS_MATRIX=cfg.dyn.test_runners_matrix
             """)
 
   test:
     needs: config
-    runs-on: ${{ fromJson(needs.config.outputs.TEST_RUNNER) }}
-    env:
-      TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
-      TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+    strategy:
+      matrix:
+        runner: ${{ fromJson(needs.config.outputs.TEST_RUNNERS_MATRIX) }} 
+    runs-on: ${{ fromJson(matrix.runner) }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -91,6 +84,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
+      - name: Determine runner platform
+        id: platform
+        run: |
+          case "$(uname -m)" in
+            X86_64)
+              platform=linux/amd64
+              ;;
+            aarch64)
+              platform=linux/arm64
+              ;;
+            *)
+              echo "unsupported platform: $(uname -m)"
+              ;;
+          esac
+          (
+            echo PLATFORM=${platform}
+          ) >> ${GITHUB_OUTPUT}
+
+
       - name: Build tester image
         uses: docker/build-push-action@v5
         with:
@@ -98,7 +110,7 @@ jobs:
           tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
           load: true
           context: ${{ env.CLONE_DIR }}
-          platforms: ${{ inputs.test-platform }}
+          platforms: ${{ steps.platform.outputs.PLATFORM }}
           build-args: |
             BASE_IMAGE=${{ needs.config.outputs.PRERELEASE_IMAGE }}
     
@@ -107,6 +119,10 @@ jobs:
           make -C ${{ env.CLONE_DIR }} test-release
         env:
           DEBUG: ${{ runner.debug }}
+          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+          TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

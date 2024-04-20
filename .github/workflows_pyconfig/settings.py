@@ -117,7 +117,9 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
 
   test_date = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-  test_platforms_matrix = json.dumps(cfg.release.build_platforms)
+  test_runners_matrix = json.dumps(
+    [json.dumps(cfg.ci.runners[platform]) for platform in cfg.release.build_platforms]
+  )
 
   debian_base_images_matrix = json.dumps(cfg.debian.base_images)
   debian_build_architectures_matrix = json.dumps(cfg.debian.build_architectures)
@@ -178,7 +180,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
       "login_dockerhub": "dockerhub" in release_registries,
       "login_github": "github" in release_registries,
       "tag": release_tag,
-      "test_platforms_matrix": test_platforms_matrix,
+      "test_runners_matrix": test_runners_matrix,
       "release_repos": "\n".join(cfg.release.release_repos),
     },
     "test_date": test_date,

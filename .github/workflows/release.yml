@@ -24,70 +24,32 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
-  config:
-    runs-on: ubuntu-latest
-    outputs:
-      TEST_PLATFORMS: ${{steps.config.outputs.TEST_PLATFORMS}}
-    steps:
-      - name: Clone source repository
-        uses: actions/checkout@v4
-        with:
-          path: ${{ env.CLONE_DIR }}
-          submodules: true
-
-      - name: Configure workflow
-        id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              TEST_PLATFORMS=cfg.dyn.test_platforms
-            """)
-      
-      - name: Validate code
-        run: |
-          echo "Linting code..."
-
-          # TODO validate code changes here
-
   build:
-    needs: config
     uses: ./.github/workflows/_release_build.yml
     secrets: inherit
 
   test:
     needs:
-      - config
       - build
-    strategy:
-      matrix:
-        test-platform: ${{ fromJson(needs.config.outputs.TEST_PLATFORMS) }}
     uses: ./.github/workflows/_release_test.yml
     secrets: inherit
-    with:
-      test-platform: ${{ matrix.test-platform }}
 
   push:
     needs:
-      - config
       - test
     uses: ./.github/workflows/_release_push.yml
     secrets: inherit
 
   update_badges:
     needs:
-      - config
       - push
     uses: ./.github/workflows/_release_badges.yml
     secrets: inherit
 
   deb_release:
     needs:
-      - config
       - test
     uses: ./.github/workflows/deb_release.yml
     secrets: inherit
+
+    
