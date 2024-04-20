@@ -119,7 +119,7 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
 
   test_runners_matrix = json.dumps(
     [
-      json.dumps(getattr(cfg.ci.runners, platform.replace("/")))
+      json.dumps(getattr(cfg.ci.runners, platform.replace("/", "_")))
       for platform in cfg.release.build_platforms
     ]
   )
