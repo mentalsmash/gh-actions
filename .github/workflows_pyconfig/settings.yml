@@ -77,10 +77,10 @@ release:
   - linux/amd64
   - linux/arm64
   # Push pre-release image to GitHub for testing
-  prerelease_repo: ghcr.io/mentalsmash/ref-project-debdocker-test
+  test_repo: ghcr.io/mentalsmash/ref-project-debdocker-test
   # Image repositories for the released images.
   # Published to both GitHub and DockerHub
-  release_repos:
+  repos:
   - ghcr.io/mentalsmash/ref-project-debdocker
   - mentalsmash/ref-project-debdocker
   # Add an arbitrary suffix to the image tags

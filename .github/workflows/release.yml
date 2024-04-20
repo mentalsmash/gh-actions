@@ -52,4 +52,23 @@ jobs:
     uses: ./.github/workflows/deb_release.yml
     secrets: inherit
 
-    
+  summarize:
+    needs:
+      - deb_release
+      - push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Configure and summarize workflow
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import summarize
+          summarize(workflow="release", github="""${{ toJson(github) }}""")

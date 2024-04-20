@@ -18,8 +18,6 @@ import subprocess
 from typing import NamedTuple
 from pathlib import Path
 
-from ..write_output import write_output
-
 
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   clone_dir = Path(__file__).parent.parent.parent.parent
@@ -100,20 +98,16 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
 
   print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
 
-  write_output(
-    {
-      "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
-      "BASIC_VALIDATION_BUILD_PLATFORMS": json.dumps(
-        cfg.pull_request.validation.basic.build_platforms
-      ),
-      "DEB_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.deb.base_images),
-      "DEB_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.deb.build_platforms),
-      "FULL_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.full.base_images),
-      "FULL_VALIDATION_BUILD_PLATFORMS": json.dumps(
-        cfg.pull_request.validation.full.build_platforms
-      ),
-      "VALIDATE_FULL": result_full,
-      "VALIDATE_DEB": result_deb,
-      "VALIDATE_BASIC": result_basic,
-    }
-  )
+  return {
+    "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
+    "BASIC_VALIDATION_BUILD_PLATFORMS": json.dumps(
+      cfg.pull_request.validation.basic.build_platforms
+    ),
+    "DEB_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.deb.base_images),
+    "DEB_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.deb.build_platforms),
+    "FULL_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.full.base_images),
+    "FULL_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.full.build_platforms),
+    "VALIDATE_FULL": result_full,
+    "VALIDATE_DEB": result_deb,
+    "VALIDATE_BASIC": result_basic,
+  }

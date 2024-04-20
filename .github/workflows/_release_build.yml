@@ -43,7 +43,7 @@ jobs:
               DOCKER_BUILD_PLATFORMS = cfg.dyn.docker.build_platforms
               LOGIN_DOCKERHUB = cfg.dyn.prerelease.login_dockerhub
               LOGIN_GITHUB = cfg.dyn.prerelease.login_github
-              PRERELEASE_REPO = cfg.release.prerelease_repo
+              TEST_REPO = cfg.release.test_repo
             """)
 
       - name: Set up QEMU
@@ -57,7 +57,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ steps.config.outputs.PRERELEASE_REPO }}
+            ${{ steps.config.outputs.TEST_REPO }}
           tags: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
           flavor: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
         env:

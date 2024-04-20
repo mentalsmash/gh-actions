@@ -13,24 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import json
-from typing import NamedTuple
+import os
+from pathlib import Path
+import importlib
+from .configure import configuration
 
 
-def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
-  runner = json.dumps(getattr(cfg.ci.runners, inputs.build_platform.replace("/", "_")))
-
-  repository_name = github.repository.replace("/", "-")
-  build_platform_label = cfg.dyn.build.platform.replace("/", "-")
-  base_image_tag = inputs.base_image.replace(":", "-")
-  ci_tester_image = f"{cfg.ci.ci_tester_repo}:{base_image_tag}"
-
-  test_id = f"ci-{build_platform_label}__{cfg.dyn.build.version}"
-  test_artifact = f"{repository_name}-test-{test_id}__{cfg.dyn.test_date}"
-
-  return {
-    "CI_RUNNER": runner,
-    "CI_TESTER_IMAGE": ci_tester_image,
-    "TEST_ARTIFACT": test_artifact,
-    "TEST_ID": test_id,
-  }
+###############################################################################
+#
+###############################################################################
+def summarize(workflow: str, github: str, inputs: str | None = None):
+  cfg = configuration(github, inputs)
+  workflow_mod = importlib.import_module(f"workflows_pyconfig.workflows.{workflow}")
+  summary = workflow_mod.summarize(github=github, inputs=inputs, cfg=cfg)
+  with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+    output.write(summary)
+    output.write("\n")

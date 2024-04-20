@@ -40,7 +40,6 @@ jobs:
           sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
           from workflows_pyconfig import configure
           configure(
-            workflow="deb_release",
             github="""${{ toJson(github) }}""",
             outputs="""\
               DEB_BASE_IMAGES = cfg.dyn.debian.base_images_matrix

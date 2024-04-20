@@ -16,8 +16,6 @@
 import json
 from typing import NamedTuple
 
-from ..write_output import write_output
-
 
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   runner = json.dumps(getattr(cfg.ci.runners, f"linux_{inputs.build_architecture}"))
@@ -28,12 +26,10 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   test_artifact = f"{repository_name}-debtest-{test_id}__{cfg.dyn.test_date}"
   deb_artifact = f"{repository_name}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.dyn.build.version}__{cfg.dyn.test_date}"
 
-  write_output(
-    {
-      "DEB_ARTIFACT": deb_artifact,
-      "DEB_BUILDER": f"{cfg.debian.builder_repo}:{deb_builder_tag}",
-      "DEB_RUNNER": runner,
-      "TEST_ARTIFACT": test_artifact,
-      "TEST_ID": test_id,
-    }
-  )
+  return {
+    "DEB_ARTIFACT": deb_artifact,
+    "DEB_BUILDER": f"{cfg.debian.builder_repo}:{deb_builder_tag}",
+    "DEB_RUNNER": runner,
+    "TEST_ARTIFACT": test_artifact,
+    "TEST_ID": test_id,
+  }

@@ -98,7 +98,8 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
   build_version = build_version.replace("/", "-")
 
   repo_org = github.repository.split("/")[0]
-  prerel_image = f"{cfg.release.prerelease_repo}:{release_tag}"
+
+  prerel_image = f"{cfg.release.test_repo}:{release_tag}"
   prerel_registries = _extract_registries(
     repo_org,
     [
@@ -107,10 +108,11 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
     ],
   )
 
+  release_images = [f"{release_repo}:{release_tag}" for release_repo in cfg.release.repos]
   release_registries = _extract_registries(
     repo_org,
     [
-      *cfg.release.release_repos,
+      *cfg.release.repos,
       prerel_image,
     ],
   )
@@ -180,11 +182,12 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
       "login_github": "github" in prerel_registries,
     },
     "release": {
+      "images": release_images,
       "login_dockerhub": "dockerhub" in release_registries,
       "login_github": "github" in release_registries,
       "tag": release_tag,
       "test_runners_matrix": test_runners_matrix,
-      "release_repos": "\n".join(cfg.release.release_repos),
+      "repos": "\n".join(cfg.release.repos),
     },
     "test_date": test_date,
   }
