@@ -38,7 +38,7 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      CI_RUNNER: ${{ steps.config.outputs.RUNNER }}
+      CI_RUNNER: ${{ steps.config.outputs.CI_RUNNER }}
       CI_TESTER_IMAGE: ${{ steps.config.outputs.CI_TESTER_IMAGE }}
       LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
       LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
@@ -70,7 +70,8 @@ jobs:
               LOGIN_DOCKERHUB = cfg.dyn.ci.login_dockerhub
               LOGIN_GITHUB = cfg.dyn.ci.login_github
               TEST_DATE = cfg.dyn.test_date
-            """)
+            """,
+            inputs="""${{ toJson(inputs) }}""")
       
       - name: Validate code
         run: |

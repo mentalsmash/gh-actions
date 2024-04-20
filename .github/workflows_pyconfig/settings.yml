@@ -47,8 +47,8 @@ pull_request:
     deb:
       base_images:
       - ubuntu:22.04
-      build_platforms:
-      - linux/amd64
+      build_architectures:
+      - amd64
 
 #############################################################################
 # Release settings

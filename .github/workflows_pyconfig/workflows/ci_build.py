@@ -21,7 +21,7 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   runner = json.dumps(getattr(cfg.ci.runners, inputs.build_platform.replace("/", "_")))
 
   repo = github.repository.split("/")[-1]
-  build_platform_label = cfg.dyn.build.platform.replace("/", "-")
+  build_platform_label = inputs.build_platform.replace("/", "-")
   base_image_tag = inputs.base_image.replace(":", "-")
   ci_tester_image = f"{cfg.ci.ci_tester_repo}:{base_image_tag}"
 

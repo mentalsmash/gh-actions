@@ -96,6 +96,9 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
       )
       result_basic = review_state != "approved"
 
+  # Debian testing requires a debian package.
+  result_deb = result_deb and (clone_dir / "debian" / "control").is_file()
+
   print(f"PR {pr_no} configuration: basic={result_basic}, full={result_full}, deb={result_deb}")
 
   return {
@@ -104,7 +107,9 @@ def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
       cfg.pull_request.validation.basic.build_platforms
     ),
     "DEB_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.deb.base_images),
-    "DEB_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.deb.build_platforms),
+    "DEB_VALIDATION_BUILD_ARCHITECTURES": json.dumps(
+      cfg.pull_request.validation.deb.build_architectures
+    ),
     "FULL_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.full.base_images),
     "FULL_VALIDATION_BUILD_PLATFORMS": json.dumps(cfg.pull_request.validation.full.build_platforms),
     "VALIDATE_FULL": result_full,

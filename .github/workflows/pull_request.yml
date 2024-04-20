@@ -37,7 +37,7 @@ jobs:
       BASIC_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.BASIC_VALIDATION_BUILD_PLATFORMS }}
       BASIC_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.BASIC_VALIDATION_BASE_IMAGES }}
       DEB_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.DEB_VALIDATION_BASE_IMAGES }}
-      DEB_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.DEB_VALIDATION_BUILD_PLATFORMS }}
+      DEB_VALIDATION_BUILD_ARCHITECTURES: ${{ steps.config.outputs.DEB_VALIDATION_BUILD_ARCHITECTURES }}
       FULL_VALIDATION_BASE_IMAGES: ${{ steps.config.outputs.FULL_VALIDATION_BASE_IMAGES }}
       FULL_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.FULL_VALIDATION_BUILD_PLATFORMS }}
       VALIDATE_BASIC: ${{ steps.config.outputs.VALIDATE_BASIC }}
@@ -98,11 +98,11 @@ jobs:
     if: ${{ needs.check-trigger.outputs.VALIDATE_DEB }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_PLATFORMS) }}
+        build-architecture: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_ARCHITECTURES) }}
         base-image: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BASE_IMAGES) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
     with:
       base-image: ${{ matrix.base-image }}
-      build-platform: ${{ matrix.build-platform }}
+      build-architecture: ${{ matrix.build-architecture }}
 

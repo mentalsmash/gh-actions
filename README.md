@@ -108,21 +108,6 @@ The guide assumes that the repository will be owned by a GitHub organization
 (of which you are an administrator). Some adjustments might be required to
 use it for a personal repository.
 
-### Required tools
-
-1. Clone this repository locally:
-
-   ```sh
-   git clone https://github.com/mentalsmash/ref-project-debdocker
-   ```
-
-   Optionally, export the clone's location for easier reference when
-   following this guide:
-
-   ```sh
-   export REF_PROJECT=$(pwd)/ref-project-docker
-   ```
-
 ### Repository Initialization
 
 1. Create your repository (e.g. `my-org/my-repo`) if it doesn't already exist.
