@@ -19,7 +19,7 @@ from ..write_output import write_output
 
 
 def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
-  runner = cfg.ci.runners[f"linux/{inputs.build_architecture}"]
+  runner = getattr(cfg.ci.runners, f"linux_{inputs.build_architecture}")
 
   deb_builder_tag = inputs.base_image.replace(":", "-").replace("/", "-")
   repository_name = github.repository.replace("/", "-")

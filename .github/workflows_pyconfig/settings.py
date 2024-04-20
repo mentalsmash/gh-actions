@@ -118,7 +118,10 @@ def settings(cfg: NamedTuple, github: NamedTuple) -> dict:
   test_date = datetime.now().strftime("%Y%m%d-%H%M%S")
 
   test_runners_matrix = json.dumps(
-    [json.dumps(cfg.ci.runners[platform]) for platform in cfg.release.build_platforms]
+    [
+      json.dumps(getattr(cfg.ci.runners, platform.replace("/")))
+      for platform in cfg.release.build_platforms
+    ]
   )
 
   debian_base_images_matrix = json.dumps(cfg.debian.base_images)
