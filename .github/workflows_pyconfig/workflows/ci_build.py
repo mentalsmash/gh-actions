@@ -15,22 +15,23 @@
 ###############################################################################
 import json
 from typing import NamedTuple
+from pathlib import Path
 
 
-def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
+def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   runner = json.dumps(getattr(cfg.ci.runners, inputs.build_platform.replace("/", "_")))
 
   repo = github.repository.split("/")[-1]
   build_platform_label = inputs.build_platform.replace("/", "-")
   base_image_tag = inputs.base_image.replace(":", "-")
-  ci_tester_image = f"{cfg.ci.ci_tester_repo}:{base_image_tag}"
+  tester_image = f"{cfg.ci.images.tester.repo}:{base_image_tag}"
 
-  test_id = f"ci-{build_platform_label}__{cfg.dyn.build.version}"
-  test_artifact = f"{repo}-test-{test_id}__{cfg.dyn.test_date}"
+  test_id = f"ci-{build_platform_label}__{cfg.build.version}"
+  test_artifact = f"{repo}-test-{test_id}__{cfg.build.date}"
 
   return {
     "CI_RUNNER": runner,
-    "CI_TESTER_IMAGE": ci_tester_image,
+    "LOCAL_TESTER_IMAGE_BASE_IMAGE": tester_image,
     "TEST_ARTIFACT": test_artifact,
     "TEST_ID": test_id,
   }

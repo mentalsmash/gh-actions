@@ -33,15 +33,15 @@ jobs:
         configure(
           github="""${{ toJson(github) }}""",
           outputs="""\
-            BADGE_BASE_IMAGE_COLOR = cfg.dyn.badge.base_image.color
-            BADGE_BASE_IMAGE_FILENAME = cfg.dyn.badge.base_image.filename
-            BADGE_BASE_IMAGE_GIST = cfg.dyn.badge.base_image.gist
-            BADGE_BASE_IMAGE_MESSAGE = cfg.dyn.badge.base_image.message
-            BADGE_VERSION_COLOR = cfg.dyn.badge.version.color
-            BADGE_VERSION_FILENAME = cfg.dyn.badge.version.filename
-            BADGE_VERSION_GIST = cfg.dyn.badge.version.gist
-            BADGE_VERSION_MESSAGE = cfg.dyn.badge.version.message
-            DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
+            BADGE_BASE_IMAGE_COLOR = cfg.release.badge.base_image.color
+            BADGE_BASE_IMAGE_FILENAME = cfg.release.badge.base_image.filename
+            BADGE_BASE_IMAGE_GIST = cfg.release.badge.base_image.gist
+            BADGE_BASE_IMAGE_MESSAGE = cfg.release.badge.base_image.message
+            BADGE_VERSION_COLOR = cfg.release.badge.version.color
+            BADGE_VERSION_FILENAME = cfg.release.badge.version.filename
+            BADGE_VERSION_GIST = cfg.release.badge.version.gist
+            BADGE_VERSION_MESSAGE = cfg.release.badge.version.message
+            DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts.prefix
           """)
 
     - name: Download all artifacts

@@ -19,10 +19,7 @@ from typing import NamedTuple
 from pathlib import Path
 
 
-def configure(cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
-  clone_dir = Path(__file__).parent.parent.parent.parent
-  print(f"Clone directory for {github.repository}: {clone_dir}")
-
+def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: NamedTuple) -> dict:
   is_draft = bool(github.event.pull_request.draft)
   pr_no = github.event.pull_request.number
 

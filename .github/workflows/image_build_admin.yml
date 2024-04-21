@@ -1,6 +1,6 @@
 name: Image Build (admin)
 run-name: |
-  docker build [ghcr.io/${{ github.repository }}-admin]
+  docker build [admin]
 
 on:
   workflow_dispatch:
@@ -15,47 +15,63 @@ on:
       - .github/workflows/image_build_admin.yml
 
 concurrency:
-  group: uno-ci-image-build-admin
+  group: image-build-admin
   cancel-in-progress: true
 
 permissions:
   packages: write
   contents: read
 
+env:
+  CLONE_DIR: src/repo
+
 jobs:
-  build:
+  config:
     runs-on: ubuntu-latest
+    outputs:
+      ADMIN_IMAGE_BASE_IMAGE: ${{ steps.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
+      ADMIN_IMAGE_BUILD_PLATFORMS: ${{ steps.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
+      ADMIN_IMAGE_REPO: ${{ steps.config.outputs.ADMIN_IMAGE_REPO }}
+      ADMIN_IMAGE_TAGS_CONFIG: ${{ steps.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
+      CLONE_DIR: ${{ steps.config.outputs.CLONE_DIR }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
+      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract image metadata
-        id: meta-docker
-        uses: docker/metadata-action@v5
         with:
-          images: |
-            ghcr.io/${{ github.repository }}-admin
-          tags: latest
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Configure workflow
+        id: config
+        shell: python
+        run: |
+          import sys
+          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
+          from workflows_pyconfig import configure
+          configure(
+            github="""${{ toJson(github) }}""",
+            outputs="""\
+              ADMIN_IMAGE_REPO = cfg.ci.images.admin.repo
+              ADMIN_IMAGE_TAGS_CONFIG = cfg.ci.images.admin.tags_config
+              ADMIN_IMAGE_BASE_IMAGE = cfg.ci.images.admin.base_image
+              ADMIN_IMAGE_BUILD_PLATFORMS = cfg.ci.images.admin.build_platforms_config
+              LOGIN_DOCKERHUB = cfg.ci.images.admin.login.dockerhub
+              LOGIN_GITHUB = cfg.ci.images.admin.login.github
+              CLONE_DIR = cfg.build.clone_dir
+            """)
 
-      - name: Log in to GitHub
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    needs: config
+    uses: ./.github/workflows/image_builder.yml
+    with:
+      base-image: ${{ needs.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
+      build-platforms: ${{ needs.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
+      dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/admin/Dockerfile
+      image-repos: ${{ needs.config.outputs.ADMIN_IMAGE_REPO }}
+      image-tags-config: ${{ needs.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
+      login-github: ${{ needs.config.outputs.LOGIN_GITHUB }}
+      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB }}
+      push: true
 
-      - name: Build and push admin image
-        uses: docker/build-push-action@v5
-        with:
-          file: docker/admin/Dockerfile
-          tags: ${{ steps.meta-docker.outputs.tags }}
-          annotations: ${{ steps.meta-docker.outputs.annotations }}
-          labels: ${{ steps.meta-docker.outputs.labels }}
-          push: true
-          context: .
-          platforms: linux/amd64

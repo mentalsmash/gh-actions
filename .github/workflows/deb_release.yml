@@ -43,10 +43,10 @@ jobs:
           configure(
             github="""${{ toJson(github) }}""",
             outputs="""\
-              DEB_BASE_IMAGES = cfg.dyn.debian.base_images_matrix
-              DEB_BUILD_ARCHITECTURES = cfg.dyn.debian.build_architectures_matrix
-              DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts_prefix
-              DEB_ENABLED = cfg.dyn.debian.enabled
+              DEB_BASE_IMAGES = cfg.debian.builder.base_images_matrix
+              DEB_BUILD_ARCHITECTURES = cfg.debian.builder.architectures_matrix
+              DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts.prefix
+              DEB_ENABLED = cfg.debian.enabled
             """)
 
   build-packages:

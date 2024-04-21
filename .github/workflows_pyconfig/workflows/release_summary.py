@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 
-def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
+def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
   repo = github.repository.split("/")[-1]
   repo_url = f"https://github.com/{github.repository}"
 
@@ -37,11 +37,11 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
       url = f"https://{image_repo}"
     return f"[`{image}`]({url})"
 
-  prerel_image_link = _image_link(cfg.dyn.prerelease.image)
+  prerel_image_link = _image_link(cfg.release.prerelease_image)
   rel_images_list = "".join(
     [
       "<ul>",
-      *(f"<li>{_image_link(img)}</li>" for img in cfg.dyn.release.images),
+      *(f"<li>{_image_link(img)}</li>" for img in cfg.release.final_images),
       "</ul> |",
     ]
   )
@@ -62,7 +62,7 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     ]
   )
 
-  summary_title = f"{cfg.dyn.build.label} release - {repo} - {cfg.dyn.build.version}"
+  summary_title = f"{cfg.build.profile} release - {repo} - {cfg.build.version}"
 
   if github.ref_type == "branch":
     release_page = "N/A"
@@ -92,7 +92,6 @@ def summarize(github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
     f"| Property | Value |"
     "\n"
     f"|----------|-------|"
-    "\n"
     "\n"
     f"| **CI Settings** | {settings_link} |"
     "\n"
