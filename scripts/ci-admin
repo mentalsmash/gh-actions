@@ -64,7 +64,7 @@ import traceback
 from functools import partial
 from pathlib import Path
 from typing import Generator, NamedTuple, TextIO, Protocol
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 ScriptsDir = Path(__file__).parent
 ScriptNoninteractiveRequired = not sys.stdin.isatty() or not sys.stdout.isatty()
@@ -253,10 +253,10 @@ def gh_api(
   method: str = "GET",
 ) -> dict | list | None:
   cmd = [
-    "gh api "
+    "gh api --paginate "
     f"-H 'Accept: {GitHubApiAccept}' "
     f"-H 'X-GitHub-Api-Version: {GitHubApiVersion}' "
-    f"{('-X ' + method) if method else ''}"
+    f"{('-X ' + method + ' ') if method else ''}"
     f"{url}"
   ]
   if jq_filter:
@@ -274,11 +274,13 @@ def gh_api(
 # Parse/print dates in the format used by the GH API
 ###############################################################################
 def github_date_parse(date: str) -> datetime:
-  return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+  parsed = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+  return parsed.replace(tzinfo=timezone.utc)
 
 
 def github_date_str(date: datetime) -> str:
-  return date.strftime("%Y-%m-%dT%H:%M:%SZ")
+  result = date.replace(tzinfo=timezone.utc)
+  return result.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 ###############################################################################
@@ -542,6 +544,7 @@ class Package(NamedTuple):
     package_type: str = "container",
     prompt: str | None = None,
     noninteractive: bool = False,
+    packages: list["Package"] | None = None,
   ) -> list["Package"]:
     def _ls_packages() -> Generator[Package, None, None]:
       jq_filter = (
@@ -568,7 +571,9 @@ class Package(NamedTuple):
         if pkg
       ]
 
-    packages = list(_ls_packages())
+    if packages is None:
+      packages = list(_ls_packages())
+
     if prompt is None:
       prompt = "available packages"
     sort_packages = partial(sorted, key=lambda p: p.updated_at)
@@ -592,6 +597,7 @@ class PackageVersion(NamedTuple):
   updated_at: datetime
 
   DatetimeFields = [3, 4]
+  DefaultMaxAge = timedelta(days=30)
 
   def __str__(self) -> str:
     return DataObject.str(self)
@@ -608,7 +614,8 @@ class PackageVersion(NamedTuple):
     package_type: str = "container",
     prompt: str | None = None,
     noninteractive: bool = False,
-  ) -> list[str]:
+    versions: list["PackageVersion"] | None = None,
+  ) -> list["PackageVersion"]:
     def _ls_versions() -> Generator[PackageVersion, None, None]:
       jq_filter = "[ (.[] | [.id, .name, .metadata.container.tags, .created_at, .updated_at]) ]"
       url = (
@@ -631,7 +638,8 @@ class PackageVersion(NamedTuple):
         if pkg
       ]
 
-    versions = list(_ls_versions())
+    if versions is None:
+      versions = list(_ls_versions())
     if prompt is None:
       prompt = f"available versions for {package}"
     sort_versions = partial(sorted, key=lambda p: p.updated_at)
@@ -656,7 +664,8 @@ class PackageVersion(NamedTuple):
     prompt: str | None = None,
     noninteractive: bool = False,
     noop: bool = False,
-  ) -> list[str]:
+    versions: list["PackageVersion"] | None = None,
+  ) -> list["PackageVersion"]:
     def _delete_version(version: PackageVersion):
       url = (
         f"/orgs/{org}/packages/{package_type}/{package}/versions/{version.id}"
@@ -670,7 +679,16 @@ class PackageVersion(NamedTuple):
     deleted = []
     if prompt is None:
       prompt = "version to delete"
-    for version in cls.select(package, org, filter, package_type, prompt, noninteractive):
+
+    for version in cls.select(
+      package=package,
+      org=org,
+      filter=filter,
+      package_type=package_type,
+      prompt=prompt,
+      noninteractive=noninteractive,
+      versions=versions,
+    ):
       if not noop:
         _delete_version(version)
       deleted.append(version)
@@ -684,6 +702,36 @@ class PackageVersion(NamedTuple):
     else:
       log.warning("[{}] {} runs DELETED", package_label, len(deleted))
     return deleted
+
+  ###############################################################################
+  # Prune Untagged
+  ###############################################################################
+  @classmethod
+  def prune_untagged(
+    cls,
+    package: str,
+    org: str | None = None,
+    max_age: timedelta | None = None,
+    package_type: str = "container",
+    noop: bool = False,
+  ) -> list["PackageVersion"]:
+    owner = org or "user"
+    if max_age is None:
+      max_age = cls.DefaultMaxAge
+
+    untagged_versions = cls.select(package, org, filter="'[] ", package_type=package_type)
+
+    now = datetime.now(timezone.utc)
+
+    prunable = [version for version in untagged_versions if (now - version.updated_at) >= max_age]
+
+    log.info("[{}][{}] {} untagged versions older than {}", owner, package, len(prunable), max_age)
+    for i, version in enumerate(prunable):
+      log.info(" {}. {}", i + 1, version)
+
+    return cls.delete(
+      package=package, org=org, package_type=package_type, versions=prunable, noop=noop
+    )
 
 
 ###############################################################################
@@ -959,7 +1007,7 @@ def define_parser() -> argparse.ArgumentParser:
 
   parser_ls_runs = subparsers.add_parser(
     "select-runs",
-    help="List all workflow runs, or a subset matching an fzf filter.",
+    help="List all workflow runs, or only a subset matching an fzf filter.",
   )
   parser_ls_runs.add_argument(
     "-r",
@@ -1032,7 +1080,7 @@ def define_parser() -> argparse.ArgumentParser:
 
   parser_delete_versions = subparsers.add_parser(
     "delete-versions",
-    help="Delete all workflow runs, or a subset matching an fzf filter.",
+    help="Delete all versions of a package, or only a subset matching an fzf filter.",
   )
   parser_delete_versions.add_argument("-p", "--package", help="Target package.", required=True)
   parser_delete_versions.add_argument(
@@ -1043,6 +1091,22 @@ def define_parser() -> argparse.ArgumentParser:
     "--filter",
     help="Custom zfz filter to run in unattended mode.",
     default=None,
+  )
+
+  parser_prune_versions = subparsers.add_parser(
+    "prune-versions",
+    help="Delete all untagged versions of a package older than certain amount of days.",
+  )
+  parser_prune_versions.add_argument("-p", "--package", help="Target package.", required=True)
+  parser_prune_versions.add_argument(
+    "-o", "--org", help="Target GitHub organization.", default=None
+  )
+  parser_prune_versions.add_argument(
+    "-a",
+    "--max-age",
+    help='Maximum number of days since the last update to consider the image "prunable" (floating point number).',
+    default=None,
+    type=float,
   )
 
   parser_nightly_cleanup = subparsers.add_parser(
@@ -1104,6 +1168,16 @@ def dispatch_action(args: argparse.Namespace) -> None:
         package=args.package,
         org=args.org,
         filter=args.filter,
+        noop=args.noop,
+      ):
+        output(str(run))
+    elif args.action == "prune-versions":
+      max_age = timedelta(days=args.max_age) if args.max_age else None
+      tabulate_columns(*PackageVersion._fields)
+      for run in PackageVersion.prune_untagged(
+        package=args.package,
+        org=args.org,
+        max_age=max_age,
         noop=args.noop,
       ):
         output(str(run))
