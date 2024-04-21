@@ -118,11 +118,10 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
     ],
   )
   admin_build_platforms_config = ",".join(cfg.ci.images.admin.build_platforms)
-  admin_base_image_matrix = json.dumps([])
 
   release_base_images = [release_cfg.base_image for release_cfg in cfg.release.profiles]
 
-  tester_base_image_matrix = json.dumps(release_base_images)
+  tester_base_images_matrix = json.dumps(release_base_images)
   tester_registries = extract_registries(
     repo_org,
     [
@@ -158,10 +157,9 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
             "tag": admin_tag,
             "tags_config": admin_tag,
             "build_platforms_config": admin_build_platforms_config,
-            "base_image_matrix": admin_base_image_matrix,
           },
           "tester": {
-            "base_image_matrix": tester_base_image_matrix,
+            "base_images_matrix": tester_base_images_matrix,
             "build_platforms_config": docker_build_platforms,
             "login": {
               "dockerhub": "dockerhub" in tester_registries,
