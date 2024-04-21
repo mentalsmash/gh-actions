@@ -66,12 +66,21 @@ jobs:
             echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -jr .pyconfig.json)
             echo DEB_ENABLED=$(jq '.debian.enabled' -jr .pyconfig.json)
             echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+
+          (
             echo "DOCKER_TAGS_CONFIG<<EOF"
-              jq '.release.tags_config' -jr .pyconfig.json
+            jq '.release.tags_config' -jr .pyconfig.json
             echo EOF
+          ) >> ${GITHUB_OUTPUT}
+
+          (
             echo "DOCKER_FLAVOR_CONFIG<<EOF"
-              jq '.release.flavor_config' -jr .pyconfig.json
+            jq '.release.flavor_config' -jr .pyconfig.json
             echo EOF
+          ) >> ${GITHUB_OUTPUT}
+
+          (
             echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -jr .pyconfig.json)
             echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -jr .pyconfig.json)
             echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -jr .pyconfig.json)
@@ -99,28 +108,6 @@ jobs:
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
-
-      - name: DEbug workflow configuration
-        run: 
-          (
-            echo DEB_ARTIFACTS_PREFIX=${{ needs.config.outputs.DEB_ARTIFACTS_PREFIX }}
-            echo DEB_BASE_IMAGES_MATRIX=${{ needs.config.outputs.DEB_BASE_IMAGES_MATRIX }}
-            echo DEB_BUILD_ARCHITECTURES_MATRIX=${{ needs.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX }}
-            echo DEB_ENABLED=${{ needs.config.outputs.DEB_ENABLED }}
-            echo DOCKER_BASE_IMAGE=${{ needs.config.outputs.DOCKER_BASE_IMAGE }}
-            echo DOCKER_TAGS_CONFIG=${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
-            echo DOCKER_FLAVOR_CONFIG=${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
-            echo DOCKER_BUILD_PLATFORMS=${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
-            echo LOCAL_TESTER_IMAGE=${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
-            echo LOCAL_TESTER_RESULTS=${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
-            echo PRERELEASE_REPO=${{ needs.config.outputs.PRERELEASE_REPO }}
-            echo PRERELEASE_IMAGE=${{ needs.config.outputs.PRERELEASE_IMAGE }}
-            echo RELEASE_REPOS=${{ needs.config.outputs.RELEASE_REPOS }}
-            echo TEST_ARTIFACT=${{ needs.config.outputs.TEST_ARTIFACT }}
-            echo TEST_DATE=${{ needs.config.outputs.TEST_DATE }}
-            echo TEST_ID=${{ needs.config.outputs.TEST_ID }}
-            echo TEST_RUNNERS_MATRIX=${{ needs.config.outputs.TEST_RUNNERS_MATRIX }}
-          )
 
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master
