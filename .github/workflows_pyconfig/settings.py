@@ -120,7 +120,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   admin_build_platforms_config = ",".join(cfg.ci.images.admin.build_platforms)
   admin_base_image_matrix = json.dumps([])
 
-  release_base_images = [release_cfg.base_image for release_cfg in cfg.release]
+  release_base_images = [release_cfg.base_image for release_cfg in cfg.release.profiles]
 
   tester_base_image_matrix = json.dumps(release_base_images)
   tester_registries = extract_registries(
