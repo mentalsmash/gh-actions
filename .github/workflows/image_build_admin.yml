@@ -13,7 +13,6 @@ on:
     paths:
       - docker/admin/**
       - .github/workflows/image_build_admin.yml
-      - .github/workflows/image_builder.yml
       - .github/workflows_pyconfig/settings.*
 
 concurrency:
@@ -30,14 +29,6 @@ env:
 jobs:
   config:
     runs-on: ubuntu-latest
-    outputs:
-      ADMIN_IMAGE_BASE_IMAGE: ${{ steps.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
-      ADMIN_IMAGE_BUILD_PLATFORMS: ${{ steps.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
-      ADMIN_IMAGE_REPO: ${{ steps.config.outputs.ADMIN_IMAGE_REPO }}
-      ADMIN_IMAGE_TAGS_CONFIG: ${{ steps.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
-      CLONE_DIR: ${{ steps.config.outputs.CLONE_DIR }}
-      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
-      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -45,35 +36,37 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
       
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+  
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              ADMIN_IMAGE_REPO = cfg.ci.images.admin.repo
-              ADMIN_IMAGE_TAGS_CONFIG = cfg.ci.images.admin.tags_config
-              ADMIN_IMAGE_BASE_IMAGE = cfg.ci.images.admin.base_image
-              ADMIN_IMAGE_BUILD_PLATFORMS = cfg.ci.images.admin.build_platforms_config
-              LOGIN_DOCKERHUB = cfg.ci.images.admin.login.dockerhub
-              LOGIN_GITHUB = cfg.ci.images.admin.login.github
-              CLONE_DIR = cfg.build.clone_dir
-            """)
-
-  build:
-    needs: config
-    uses: ./.github/workflows/image_builder.yml
-    with:
-      base-image: ${{ needs.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
-      build-platforms: ${{ needs.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
-      dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/admin/Dockerfile
-      image-repos: ${{ needs.config.outputs.ADMIN_IMAGE_REPO }}
-      image-tags-config: ${{ needs.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
-      login-github: ${{ needs.config.outputs.LOGIN_GITHUB && true || false }}
-      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB && true || false }}
-      push: true
+        run: 
+          (
+            echo ADMIN_IMAGE_REPO=$(jq '.ci.images.admin.repo' -jr .pyconfig.json)
+            echo "ADMIN_IMAGE_TAGS_CONFIG<<EOF"
+            jq '.ci.images.admin.tags_config' -jr .pyconfig.json
+            echo EOF
+            echo ADMIN_IMAGE_BASE_IMAGE=$(jq '.ci.images.admin.base_image' -jr .pyconfig.json)
+            echo ADMIN_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.admin.build_platforms_config' -jr .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -jr .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+      
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          action: push
+          base-image: ${{ steps.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
+          build-platforms: ${{ steps.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/admin/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ steps.config.outputs.ADMIN_IMAGE_REPO }}
+          image-tags-config: ${{ steps.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
 

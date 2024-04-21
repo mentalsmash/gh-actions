@@ -26,66 +26,42 @@ jobs:
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
+      
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
 
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              DOCKER_BUILD_PLATFORMS = cfg.release.build_platforms_config
-              DOCKER_FLAVOR_CONFIG = cfg.release.flavor_config
-              DOCKER_TAGS_CONFIG = cfg.release.tags_config
-              LOGIN_DOCKERHUB = cfg.release.login.dockerhub
-              LOGIN_GITHUB = cfg.release.login.github
-              PRERELEASE_IMAGE = cfg.release.prerelease_image
-              RELEASE_REPOS = cfg.release.final_repos_config
-            """)
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
- 
-      - name: Extract image metadata
-        id: metadata
-        uses: docker/metadata-action@v5
+        run: 
+          (
+            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -jr .pyconfig.json)
+            echo "DOCKER_FLAVOR_CONFIG<<EOF"
+            jq '.release.flavor_config' -jr .pyconfig.json
+            echo EOF
+            echo "DOCKER_TAGS_CONFIG<<EOF"
+            jq '.release.tags_config' -jr .pyconfig.json
+            echo EOF
+            echo LOGIN_DOCKERHUB=$(jq '.release.login.dockerhub' -jr .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.release.login.github' -jr .pyconfig.json)
+            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -jr .pyconfig.json)
+            echo RELEASE_REPOS=$(jq '.release.final_repos_config' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+      
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
         with:
-          images: ${{ steps.config.outputs.RELEASE_REPOS }}
-          tags: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
-          flavor: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
-    
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        if: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-    
-      - name: Log in to GitHub
-        uses: docker/login-action@v3
-        if: ${{ steps.config.outputs.LOGIN_GITHUB }}
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
- 
-      - name: Build and push images to GitHub
-        uses: docker/build-push-action@v5
-        with:
-          file: ${{ env.CLONE_DIR }}/docker/release/Dockerfile
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          annotations: ${{ steps.metadata.outputs.annotations }}
-          push: true
+          base-image: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+          build-platforms: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/release/Dockerfile
           context: ${{ env.CLONE_DIR }}
-          platforms: ${{ steps.config.outputs.RELEASE_PLATFORMS }}
-          build-args: |
-            BASE_IMAGE=${{ steps.config.outputs.PRERELEASE_IMAGE }}
+          image-repos: ${{ steps.config.outputs.RELEASE_REPOS }}
+          image-flavor-config: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          image-tags-config: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+          action: push
+

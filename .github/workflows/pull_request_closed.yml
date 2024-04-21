@@ -48,19 +48,18 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+  
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              ADMIN_IMAGE = cfg.ci.images.admin.image
-            """)
-      
+        run: 
+          (
+            echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+
       - name: Log in to GitHub
         uses: docker/login-action@v3
         with:

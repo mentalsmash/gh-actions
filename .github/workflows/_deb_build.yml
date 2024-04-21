@@ -56,25 +56,30 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
       
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+          workflow: deb_build
+          inputs: ${{ toJson(inputs) }}
+
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            workflow="deb_build",
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              DEB_DIST_DIR = cfg.debian.artifacts.dist_dir
-              LOCAL_TESTER_IMAGE = cfg.ci.images.local_tester.image
-              LOCAL_TESTER_RESULTS = cfg.ci.test.results_dir
-              LOGIN_DOCKERHUB = cfg.debian.builder.login.dockerhub
-              LOGIN_GITHUB = cfg.debian.builder.login.github
-              TEST_DATE = cfg.build.date
-            """,
-            inputs="""${{ toJson(inputs) }}""")
+        run: 
+          (
+            echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -jr .pyconfig.json)
+            echo DEB_BUILDER=$(jq '.DEB_BUILDER' -jr .pyconfig.json)
+            echo DEB_RUNNER=$(jq '.DEB_RUNNER' -jr .pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jr .pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -jr .pyconfig.json)
+            echo DEB_DIST_DIR=$(jq '.debian.artifacts.dist_dir' -jr .pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -jr .pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -jr .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -jr .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -jr .pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+
 
   build-packages:
     needs: config

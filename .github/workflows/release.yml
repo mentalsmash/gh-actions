@@ -24,25 +24,219 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
+      DEB_ENABLED: ${{steps.config.outputs.DEB_ENABLED}}
+      DEB_BASE_IMAGES_MATRIX: ${{steps.config.outputs.DEB_BASE_IMAGES_MATRIX}}
+      DEB_BUILD_ARCHITECTURES_MATRIX: ${{steps.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX}}
+      DOCKER_BASE_IMAGE: ${{ steps.config.outputs.DOCKER_BASE_IMAGE }}
+      DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      DOCKER_FLAVOR_CONFIG: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      DOCKER_TAGS_CONFIG: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+      LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
+      LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
+      PRERELEASE_REPO: ${{ steps.config.outputs.PRERELEASE_REPO }}
+      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+      RELEASE_REPOS: ${{ steps.config.outputs.RELEASE_REPOS }}
+      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
+      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+      TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+          workflow: release_test
+
+      - name: Configure workflow
+        id: config
+        run: 
+          (
+            echo CLONE_DIR=$(jq '.build.clone_dir' -jr .pyconfig.json)
+            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -jr .pyconfig.json)
+            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -jr .pyconfig.json)
+            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -jr .pyconfig.json)
+            echo DEB_ENABLED=$(jq '.debian.enabled' -jr .pyconfig.json)
+            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -jr .pyconfig.json)
+            echo "DOCKER_TAGS_CONFIG<<EOF"
+            jq '.release.tags_config' -jr .pyconfig.json
+            echo EOF
+            echo "DOCKER_FLAVOR_CONFIG=EOF"
+            jq '.release.flavor_config' -jr .pyconfig.json
+            echo EOF
+            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -jr .pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -jr .pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -jr .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -jr .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -jr .pyconfig.json)
+            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -jr .pyconfig.json)
+            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -jr .pyconfig.json)
+            echo RELEASE_REPOS=$(jq '.release.final_repos_config' -jr .pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jr pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -jr .pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -jr pyconfig.json)
+            echo TEST_RUNNERS_MATRIXc$(jq '.release.test_runners_matrix' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
+      
+
   build:
-    uses: ./.github/workflows/_release_build.yml
-    secrets: inherit
+    needs: config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.DOCKER_BASE_IMAGE }}
+          build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
+          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: push
+
+  test:
+    needs:
+      - config
+      - build
+    strategy:
+      matrix:
+        runner: ${{ fromJson(needs.config.outputs.TEST_RUNNERS_MATRIX) }} 
+    runs-on: ${{ fromJson(matrix.runner) }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/test/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: load
+
+      - name: Generate architecture ID
+        id: arch
+        run: |
+          (
+            case "$(uname -m)" in
+              x86_64)
+                echo ARCH=amd64
+                ;;
+              aarch64)
+                echo ARCH=arm64
+                ;;
+            esac
+          ) >> ${GITHUB_OUTPUT}
+      
+      - name: Run tests
+        run: |
+          make -C ${{ env.CLONE_DIR }} test-release
+        env:
+          DEBUG: ${{ runner.debug }}
+          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+          TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}__${{ steps.arch.outputs.ARCH }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}__${{ steps.arch.outputs.ARCH }}
+          path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
+
+  push:
+    needs:
+      - config
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+          build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/release/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ needs.config.outputs.RELEASE_REPOS }}
+          image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: push
 
   deb_release:
     uses: ./.github/workflows/deb_release.yml
     secrets: inherit
 
-  test:
-    needs:
-      - build
-    uses: ./.github/workflows/_release_test.yml
+  deb-build:
+    needs: config
+    if: needs.config.outputs.DEB_ENABLED
+    strategy:
+      matrix:
+        base-image: ${{ fromJson(needs.config.outputs.DEB_BASE_IMAGES_MATRIX ) }}
+        build-architecture: ${{ fromJson(needs.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX) }}
+    uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
+    with:
+      base-image: ${{ matrix.base-image }}
+      build-architecture: ${{ matrix.build-architecture }}
 
-  push:
+  deb-publish:
     needs:
-      - test
-    uses: ./.github/workflows/_release_push.yml
-    secrets: inherit
+      - config
+      - deb-build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ needs.config.outputs.DEB_ARTIFACTS_PREFIX }}*
+        path: ${{ github.workspace }}/artifacts
+        merge-multiple: true
+
+    - name: Create new release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          artifacts/*.deb
 
   summary:
     needs:

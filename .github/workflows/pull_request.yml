@@ -52,16 +52,26 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
 
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+          workflow: pull_request
+  
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            workflow="pull_request",
-            github="""${{ toJson(github) }}""")
+        run: 
+          (
+            BASIC_VALIDATION_BASE_IMAGES=$(jq '.BASIC_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
+            BASIC_VALIDATION_BUILD_PLATFORMS=$(jq '.BASIC_VALIDATION_BUILD_PLATFORMS' -jr .pyconfig.json)
+            DEB_VALIDATION_BASE_IMAGES=$(jq '.DEB_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
+            DEB_VALIDATION_BUILD_ARCHITECTURES=$(jq '.DEB_VALIDATION_BUILD_ARCHITECTURES' -jr .pyconfig.json)
+            FULL_VALIDATION_BASE_IMAGES=$(jq '.FULL_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
+            FULL_VALIDATION_BUILD_PLATFORMS=$(jq '.FULL_VALIDATION_BUILD_PLATFORMS' -jr .pyconfig.json)
+            VALIDATE_BASIC=$(jq '.VALIDATE_BASIC' -jr .pyconfig.json)
+            VALIDATE_DEB=$(jq '.VALIDATE_DEB' -jr .pyconfig.json)
+            VALIDATE_FULL=$(jq '.VALIDATE_FULL' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
 
   basic-validation:
     needs: check-trigger

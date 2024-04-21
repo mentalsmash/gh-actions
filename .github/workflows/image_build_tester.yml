@@ -13,7 +13,6 @@ on:
     paths:
       - docker/tester/**
       - .github/workflows/image_build_tester.yml
-      - .github/workflows/image_builder.yml
       - .github/workflows_pyconfig/settings.*
 
 concurrency:
@@ -44,23 +43,22 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
       
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+  
       - name: Configure workflow
         id: config
-        shell: python
-        run: |
-          import sys
-          sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-          from workflows_pyconfig import configure
-          configure(
-            github="""${{ toJson(github) }}""",
-            outputs="""\
-              CLONE_DIR = cfg.build.clone_dir
-              TESTER_IMAGE_REPO = cfg.ci.images.tester.repo
-              TESTER_IMAGE_BUILD_PLATFORMS = cfg.ci.images.tester.build_platforms_config
-              TESTER_IMAGE_BASE_IMAGE_MATRIX = cfg.ci.images.tester.base_images_matrix
-              LOGIN_GITHUB = cfg.ci.images.tester.login.github
-              LOGIN_DOCKERHUB = cfg.ci.images.tester.login.dockerhub
-            """)
+        run: 
+          (
+            echo CLONE_DIR=$(jq '.build.clone_dir' -jr .pyconfig.json)
+            echo TESTER_IMAGE_REPO=$(jq '.ci.images.tester.repo' -jr .pyconfig.json)
+            echo TESTER_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.tester.build_platforms_config' -jr .pyconfig.json)
+            echo TESTER_IMAGE_BASE_IMAGE_MATRIX=$(jq '.ci.images.tester.base_images_matrix' -jr .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -jr .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -jr .pyconfig.json)
+          ) >> ${GITHUB_OUTPUT}
 
   build:
     needs:
@@ -68,12 +66,18 @@ jobs:
     strategy:
       matrix:
         base-image: ${{ fromJson(needs.config.outputs.TESTER_IMAGE_BASE_IMAGE_MATRIX) }}
-    uses: ./.github/workflows/image_builder.yml
-    with:
-      base-image: ${{ matrix.base-image }}
-      build-platforms: ${{ needs.config.outputs.TESTER_IMAGE_BUILD_PLATFORMS }}
-      dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/tester/Dockerfile
-      image-repos: ${{ needs.config.outputs.TESTER_IMAGE_REPO }}
-      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB && true || false }}
-      login-github: ${{ needs.config.outputs.LOGIN_GITHUB && true || false }}
-      push: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ matrix.base-image }}
+          build-platforms: ${{ needs.config.outputs.TESTER_IMAGE_BUILD_PLATFORMS }}
+          dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/tester/Dockerfile
+          context: ${{ needs.config.outputs.CLONE_DIR }}
+          image-repos: ${{ needs.config.outputs.TESTER_IMAGE_REPO }}
+          github-token: ${{ needs.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ needs.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ needs.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ needs.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+          action: push

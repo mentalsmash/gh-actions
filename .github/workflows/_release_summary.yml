@@ -23,26 +23,25 @@ jobs:
         path: ${{ env.CLONE_DIR }}
         submodules: true
 
+    - name: Load configuration
+      uses: mentalsmash/actions/pyconfig/configuration@master
+      with:
+        clone-dir: ${{ env.CLONE_DIR }}
+
     - name: Configure workflow
       id: config
-      shell: python
-      run: |
-        import sys
-        sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-        from workflows_pyconfig import configure
-        configure(
-          github="""${{ toJson(github) }}""",
-          outputs="""\
-            BADGE_BASE_IMAGE_COLOR = cfg.release.badge.base_image.color
-            BADGE_BASE_IMAGE_FILENAME = cfg.release.badge.base_image.filename
-            BADGE_BASE_IMAGE_GIST = cfg.release.badge.base_image.gist
-            BADGE_BASE_IMAGE_MESSAGE = cfg.release.badge.base_image.message
-            BADGE_VERSION_COLOR = cfg.release.badge.version.color
-            BADGE_VERSION_FILENAME = cfg.release.badge.version.filename
-            BADGE_VERSION_GIST = cfg.release.badge.version.gist
-            BADGE_VERSION_MESSAGE = cfg.release.badge.version.message
-            DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts.prefix
-          """)
+      run: 
+        (
+          echo BADGE_BASE_IMAGE_COLOR=$(jq '.release.badge.base_image.color' -jr .pyconfig.json)
+          echo BADGE_BASE_IMAGE_FILENAME=$(jq '.release.badge.base_image.filename' -jr .pyconfig.json)
+          echo BADGE_BASE_IMAGE_GIST=$(jq '.release.badge.base_image.gist' -jr .pyconfig.json)
+          echo BADGE_BASE_IMAGE_MESSAGE=$(jq '.release.badge.base_image.message' -jr .pyconfig.json)
+          echo BADGE_VERSION_COLOR=$(jq '.release.badge.version.color' -jr .pyconfig.json)
+          echo BADGE_VERSION_FILENAME=$(jq '.release.badge.version.filename' -jr .pyconfig.json)
+          echo BADGE_VERSION_GIST=$(jq '.release.badge.version.gist' -jr .pyconfig.json)
+          echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -jr .pyconfig.json)
+          echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -jr .pyconfig.json)
+        ) >> ${GITHUB_OUTPUT}
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -50,14 +49,12 @@ jobs:
         pattern: ${{ steps.config.outputs.DEB_ARTIFACTS_PREFIX }}*
         path: ${{ github.workspace }}/artifacts
         merge-multiple: true
-
+    
     - name: Generate summary
-      shell: python
-      run: |
-        import sys
-        sys.path.insert(0, "${{ env.CLONE_DIR }}/.github")
-        from workflows_pyconfig import summarize
-        summarize(workflow="release_summary", github="""${{ toJson(github) }}""")
+      uses: mentalsmash/actions/pyconfig/summary@master
+      with:
+        workflow: release_summary
+        clone-dir: ${{ env.CLONE_DIR }}
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0

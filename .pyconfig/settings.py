@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import NamedTuple
 from datetime import datetime
 
-from .pyconfig import sha_short, extract_registries, tuple_to_dict, merge_dicts
+from pyconfig import sha_short, extract_registries, tuple_to_dict, merge_dicts
 
 
 ###############################################################################
