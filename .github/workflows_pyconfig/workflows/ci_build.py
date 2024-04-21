@@ -31,7 +31,7 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
 
   return {
     "CI_RUNNER": runner,
-    "CI_TESTER_IMAGE": tester_image,
+    "LOCAL_TESTER_IMAGE_BASE_IMAGE": tester_image,
     "TEST_ARTIFACT": test_artifact,
     "TEST_ID": test_id,
   }
