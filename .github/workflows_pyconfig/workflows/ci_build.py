@@ -24,7 +24,7 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
   repo = github.repository.split("/")[-1]
   build_platform_label = inputs.build_platform.replace("/", "-")
   base_image_tag = inputs.base_image.replace(":", "-")
-  tester_image = f"{cfg.ci.tester_repo}:{base_image_tag}"
+  tester_image = f"{cfg.ci.tester.repo}:{base_image_tag}"
 
   test_id = f"ci-{build_platform_label}__{cfg.build.version}"
   test_artifact = f"{repo}-test-{test_id}__{cfg.build.date}"
