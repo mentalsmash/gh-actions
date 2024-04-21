@@ -177,7 +177,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
       {
         "enabled": debian_enabled,
         "builder": {
-          "base_image_matrix": debian_builder_base_images_matrix,
+          "base_images_matrix": debian_builder_base_images_matrix,
           "build_platforms_config": debian_builder_docker_build_platforms,
           "login": {
             "dockerhub": "dockerhub" in debian_builder_registries,

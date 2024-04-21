@@ -57,7 +57,7 @@ jobs:
               CLONE_DIR = cfg.build.clone_dir
               TESTER_IMAGE_REPO = cfg.ci.images.tester.repo
               TESTER_IMAGE_BUILD_PLATFORMS = cfg.ci.images.tester.build_platforms_config
-              TESTER_IMAGE_BASE_IMAGE_MATRIX = cfg.ci.images.tester.base_image_matrix
+              TESTER_IMAGE_BASE_IMAGE_MATRIX = cfg.ci.images.tester.base_images_matrix
               LOGIN_GITHUB = cfg.ci.images.tester.login.github
               LOGIN_DOCKERHUB = cfg.ci.images.tester.login.dockerhub
             """)
