@@ -24,7 +24,7 @@ jobs:
     outputs:
       DEB_ENABLED: ${{steps.config.outputs.DEB_ENABLED}}
       DEB_BASE_IMAGES_MATRIX: ${{steps.config.outputs.DEB_BASE_IMAGES_MATRIX}}
-      DEB_BUILD_ARCHITECTURES: ${{steps.config.outputs.DEB_BUILD_ARCHITECTURES}}
+      DEB_BUILD_ARCHITECTURES_MATRIX: ${{steps.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX}}
       DEB_ARTIFACTS_PREFIX: ${{steps.config.outputs.DEB_ARTIFACTS_PREFIX}}
     steps:
       - name: Clone source repository
@@ -44,7 +44,7 @@ jobs:
             github="""${{ toJson(github) }}""",
             outputs="""\
               DEB_BASE_IMAGES_MATRIX = cfg.debian.builder.base_images_matrix
-              DEB_BUILD_ARCHITECTURES = cfg.debian.builder.architectures_matrix
+              DEB_BUILD_ARCHITECTURES_MATRIX = cfg.debian.builder.architectures_matrix
               DEB_ARTIFACTS_PREFIX = cfg.debian.artifacts.prefix
               DEB_ENABLED = cfg.debian.enabled
             """)
@@ -55,7 +55,7 @@ jobs:
     strategy:
       matrix:
         base-image: ${{ fromJson(needs.config.outputs.DEB_BASE_IMAGES_MATRIX ) }}
-        build-architecture: ${{ fromJson(needs.config.outputs.DEB_BUILD_ARCHITECTURES) }}
+        build-architecture: ${{ fromJson(needs.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX) }}
     uses: ./.github/workflows/_deb_build.yml
     secrets: inherit
     with:

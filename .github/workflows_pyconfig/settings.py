@@ -104,6 +104,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
       *cfg.debian.builder.base_images,
     ],
   )
+  debian_builder_architectures_matrix = json.dumps(cfg.debian.builder.architectures)
 
   #############################################################################
   # CI infrastructure settings
@@ -178,6 +179,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "enabled": debian_enabled,
         "builder": {
           "base_images_matrix": debian_builder_base_images_matrix,
+          "architectures_matrix": debian_builder_architectures_matrix,
           "build_platforms_config": debian_builder_docker_build_platforms,
           "login": {
             "dockerhub": "dockerhub" in debian_builder_registries,
