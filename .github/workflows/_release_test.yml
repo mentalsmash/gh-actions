@@ -44,7 +44,7 @@ jobs:
             workflow="release_test",
             github="""${{ toJson(github) }}""",
             outputs="""\
-              LOCAL_TESTER_IMAGE = cfg.ci.local_tester.image
+              LOCAL_TESTER_IMAGE = cfg.ci.images.local_tester.image
               LOCAL_TESTER_RESULTS = cfg.ci.test.results_dir
               LOGIN_DOCKERHUB = cfg.release.login_prerel.dockerhub
               LOGIN_GITHUB = cfg.release.login_prerel.github
