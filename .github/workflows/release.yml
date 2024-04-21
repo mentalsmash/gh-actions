@@ -81,12 +81,18 @@ jobs:
             echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -jr .pyconfig.json)
             echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -jr .pyconfig.json)
             echo RELEASE_REPOS=$(jq '.release.final_repos_config' -jr .pyconfig.json)
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jr pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jr .pyconfig.json)
             echo TEST_DATE=$(jq '.build.date' -jr .pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -jr pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -jr .pyconfig.json)
             echo TEST_RUNNERS_MATRIXc$(jq '.release.test_runners_matrix' -jr .pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
-      
+
+      - name: Upload project settings
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-settings
+          path: .pyconfig.json
+        if: always()
 
   build:
     needs: config
