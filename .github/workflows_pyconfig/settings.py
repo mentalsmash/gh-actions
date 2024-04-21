@@ -56,7 +56,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
 
   repo_org = github.repository.split("/")[0]
 
-  prerel_image = f"{release_cfg.prerelease_repo}:{release_tag}"
+  prerel_image = f"{cfg.release.prerelease_repo}:{release_tag}"
   prerel_registries = extract_registries(
     repo_org,
     [
@@ -65,7 +65,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
     ],
   )
 
-  release_images = [f"{release_repo}:{release_tag}" for release_repo in release_cfg.final_repos]
+  release_images = [f"{release_repo}:{release_tag}" for release_repo in cfg.release.final_repos]
   release_registries = extract_registries(
     repo_org,
     [
@@ -201,7 +201,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "build_platforms_config": docker_build_platforms,
         "flavor_config": docker_flavor_config,
         "prerelease_image": prerel_image,
-        "final_repos_config": "\n".join(cfg.release.repos),
+        "final_repos_config": "\n".join(cfg.release.final_repos),
         "final_images": release_images,
         "login": {
           "dockerhub": "dockerhub" in release_registries,
