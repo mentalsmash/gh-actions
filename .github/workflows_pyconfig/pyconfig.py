@@ -52,7 +52,7 @@ def tuple_to_dict(val: NamedTuple) -> dict:
   result = val._asdict()
   for k in val._fields:
     v = getattr(val, k)
-    if isinstance(v, NamedTuple):
+    if isinstance(v, tuple):
       v = tuple_to_dict(v)
     result[k] = v
   return result
