@@ -69,13 +69,13 @@ jobs:
           ) >> ${GITHUB_OUTPUT}
 
           (
-            echo "DOCKER_TAGS_CONFIG<<EOF"
+            echo 'DOCKER_TAGS_CONFIG<<EOF'
             jq '.release.tags_config' -jr .pyconfig.json | tee >(cat 1>&2)
             echo EOF
           ) >> ${GITHUB_OUTPUT}
 
           (
-            echo "DOCKER_FLAVOR_CONFIG<<EOF"
+            echo 'DOCKER_FLAVOR_CONFIG<<EOF'
             jq '.release.flavor_config' -jr .pyconfig.json | tee >(cat 1>&2)
             echo EOF
           ) >> ${GITHUB_OUTPUT}
