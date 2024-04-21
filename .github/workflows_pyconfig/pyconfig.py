@@ -85,13 +85,21 @@ def _select_attribute(ctx: tuple | dict, selector: str) -> str:
 ###############################################################################
 def merge_dicts(result: dict, defaults: dict) -> dict:
   merged = {}
-  for k, v in defaults.items():
-    r_v = result.get(k)
-    if isinstance(v, dict):
-      r_v = merge_dicts((r_v or {}), v)
-    elif r_v is None:
-      r_v = v
-    merged[k] = r_v
+  for k in {*result.keys(), *defaults.keys()}:
+    res_v = result.get(k)
+    def_v = defaults.get(k)
+    if def_v is None and res_v is None:
+      continue
+    elif def_v is None:
+      v = res_v
+    elif res_v is None:
+      v = def_v
+    elif isinstance(def_v, dict):
+      assert isinstance(res_v, dict)
+      v = merge_dicts(res_v, def_v)
+    else:
+      v = res_v
+    merged[k] = v
   return merged
 
 
