@@ -66,7 +66,7 @@ jobs:
       image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
       image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
       image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
-      login-github: ${{ needs.config.outputs.LOGIN_GITHUB }}
-      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB }}
+      login-github: ${{ needs.config.outputs.LOGIN_GITHUB && true || false }}
+      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB && true || false }}
       push: true
 

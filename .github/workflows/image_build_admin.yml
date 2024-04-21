@@ -71,7 +71,7 @@ jobs:
       dockerfile: ${{ needs.config.outputs.CLONE_DIR }}/docker/admin/Dockerfile
       image-repos: ${{ needs.config.outputs.ADMIN_IMAGE_REPO }}
       image-tags-config: ${{ needs.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
-      login-github: ${{ needs.config.outputs.LOGIN_GITHUB }}
-      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB }}
+      login-github: ${{ needs.config.outputs.LOGIN_GITHUB && true || false }}
+      login-dockerhub: ${{ needs.config.outputs.LOGIN_DOCKERHUB && true || false }}
       push: true
 
