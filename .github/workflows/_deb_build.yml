@@ -111,8 +111,8 @@ jobs:
       run: |
         docker run --rm \
           -v $(pwd)/${{ env.CLONE_DIR }}:/repo \
-          ${{ needs.config.outputs.DEB_BUILDER }} \
-          chown -R $(id -u):$(id -g) /repo
+          ubuntu:latest \
+          chown -Rv $(id -u):$(id -g) /repo
       if: always()
 
   test-packages:
