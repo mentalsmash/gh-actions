@@ -67,7 +67,7 @@ jobs:
             workflow="deb_build",
             github="""${{ toJson(github) }}""",
             outputs="""\
-              DEB_DIST_DIR = cfg.debian.dist_dir
+              DEB_DIST_DIR = cfg.debian.artifacts.dist_dir
               LOCAL_TESTER_IMAGE = cfg.ci.images.local_tester.image
               LOCAL_TESTER_RESULTS = cfg.ci.test.results_dir
               LOGIN_DOCKERHUB = cfg.debian.builder.login.dockerhub
