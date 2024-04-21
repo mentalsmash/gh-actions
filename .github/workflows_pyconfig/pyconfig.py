@@ -220,6 +220,12 @@ def configuration(
   else:
     cfg = cfg_dict
 
+  import pprint
+
+  print("=================== PROJECT SETTINGS ===================")
+  pprint.pprint(cfg)
+  print("================== //PROJECT SETTINGS ==================")
+
   return github, inputs, cfg
 
 
