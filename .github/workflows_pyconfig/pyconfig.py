@@ -206,7 +206,22 @@ def configuration(
   print(f"Clone directory for {github.repository}: {CloneDir}")
   derived_cfg = settings(clone_dir=CloneDir, cfg=dict_to_tuple("settings", cfg_dict), github=github)
 
+  import pprint
+
+  print("=================== INPUT PROJECT SETTINGS ===================")
+  pprint.pprint(cfg_dict)
+  print("================== //INPUT PROJECT SETTINGS ==================")
+
+  print("=================== DERIVED PROJECT SETTINGS ===================")
+  pprint.pprint(derived_cfg)
+  print("================== //DERIVED PROJECT SETTINGS ==================")
+
   cfg_dict = merge_dicts(derived_cfg, cfg_dict)
+
+  print("=================== MERGED PROJECT SETTINGS ===================")
+  pprint.pprint(cfg_dict)
+  print("================== //MERGED PROJECT SETTINGS ==================")
+
   cfg_dict = merge_dicts(
     cfg_dict,
     {
@@ -215,12 +230,15 @@ def configuration(
       },
     },
   )
+
+  print("=================== AUTO PROJECT SETTINGS ===================")
+  pprint.pprint(cfg_dict)
+  print("================== //AUTO PROJECT SETTINGS ==================")
+
   if as_tuple:
     cfg = dict_to_tuple("settings", cfg_dict)
   else:
     cfg = cfg_dict
-
-  import pprint
 
   print("=================== PROJECT SETTINGS ===================")
   pprint.pprint(cfg)
