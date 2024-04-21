@@ -74,6 +74,8 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
     ],
   )
 
+  final_repos_config = "\n".join(cfg.release.final_repos)
+
   test_runners_matrix = json.dumps(
     [
       json.dumps(getattr(cfg.ci.runners, platform.replace("/", "_")))
@@ -201,7 +203,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "build_platforms_config": docker_build_platforms,
         "flavor_config": docker_flavor_config,
         "prerelease_image": prerel_image,
-        "final_repos_config": "\n".join(cfg.release.final_repos),
+        "final_repos_config": final_repos_config,
         "final_images": release_images,
         "login": {
           "dockerhub": "dockerhub" in release_registries,

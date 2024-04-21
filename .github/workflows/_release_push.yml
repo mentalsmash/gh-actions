@@ -43,7 +43,7 @@ jobs:
               LOGIN_DOCKERHUB = cfg.release.login.dockerhub
               LOGIN_GITHUB = cfg.release.login.github
               PRERELEASE_IMAGE = cfg.release.prerelease_image
-              RELEASE_REPOS = cfg.release.final_repos
+              RELEASE_REPOS = cfg.release.final_repos_config
             """)
 
       - name: Set up QEMU
