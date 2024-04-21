@@ -14,6 +14,7 @@ on:
       - docker/debian-builder/**
       - .github/workflows/image_build_debian_builder.yml
       - .github/workflows/image_builder.yml
+      - .github/workflows/settings.*
 
 concurrency:
   group: image-build-debian-builder
