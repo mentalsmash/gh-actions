@@ -29,7 +29,7 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
 
   return {
     "DEB_ARTIFACT": deb_artifact,
-    "DEB_BUILDER": f"{cfg.debian.builder_repo}:{deb_builder_tag}",
+    "DEB_BUILDER": f"{cfg.debian.builder.repo}:{deb_builder_tag}",
     "DEB_RUNNER": runner,
     "TEST_ARTIFACT": test_artifact,
     "TEST_ID": test_id,
