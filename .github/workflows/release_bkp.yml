@@ -5,12 +5,12 @@ run-name: |
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - master
-    tags:
-      - '*'
-      - '!*/**'
+  # push:
+  #   branches:
+  #     - master
+  #   tags:
+  #     - '*'
+  #     - '!*/**'
 
 concurrency:
   group: release-${{ github.ref }}
