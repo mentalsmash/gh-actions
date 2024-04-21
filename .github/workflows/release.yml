@@ -69,7 +69,7 @@ jobs:
             echo "DOCKER_TAGS_CONFIG<<EOF"
               jq '.release.tags_config' -jr .pyconfig.json
             echo EOF
-            echo "DOCKER_FLAVOR_CONFIG=EOF"
+            echo "DOCKER_FLAVOR_CONFIG<<EOF"
               jq '.release.flavor_config' -jr .pyconfig.json
             echo EOF
             echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -jr .pyconfig.json)
