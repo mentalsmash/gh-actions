@@ -205,10 +205,16 @@ def configuration(
 ) -> tuple[tuple, tuple, tuple | dict]:
   from .settings import settings
 
-  github = dict_to_tuple("github", json.loads(github.strip()))
+  def _json_load(val: str):
+    # Make sure the string doesn't contain literal or escaped newline
+    val = val.replace("\n", "")
+    val = val.replace("\\n", "")
+    return json.loads(val)
+
+  github = dict_to_tuple("github", _json_load(github.strip()))
   inputs = (inputs or "").strip()
   if inputs:
-    inputs = dict_to_tuple("inputs", json.loads(inputs.strip()))
+    inputs = dict_to_tuple("inputs", _json_load(inputs.strip()))
 
   cfg_file = Path(__file__).parent / "settings.yml"
   cfg_dict = yaml.safe_load(cfg_file.read_text())
