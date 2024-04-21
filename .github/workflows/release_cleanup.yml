@@ -42,7 +42,7 @@ jobs:
           configure(
             github="""${{ toJson(github) }}""",
             outputs="""\
-              ADMIN_IMAGE = cfg.ci.admin_image
+              ADMIN_IMAGE = cfg.ci.images.admin.image
             """)
 
       - name: "Clean up workflow runs"
