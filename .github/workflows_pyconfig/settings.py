@@ -93,7 +93,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   # Debian packaging settings
   #############################################################################
   debian_enabled = (clone_dir / "debian" / "control").is_file()
-  debian_builder_base_images_matrix = json.dumps(cfg.debian.buidler.base_images)
+  debian_builder_base_images_matrix = json.dumps(cfg.debian.builder.base_images)
   debian_builder_docker_build_platforms = ",".join(
     [f"linux/{arch}" for arch in cfg.debian.builder.architectures]
   )
