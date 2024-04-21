@@ -211,18 +211,36 @@ def configuration(
     val = val.replace("\\n", "")
     return json.loads(val)
 
-  github = dict_to_tuple("github", _json_load(github.strip()))
+  print("::group::Clone Directory")
+  print(str(CloneDir))
+  print("::endgroup::")
+
+  github_dict = _json_load(github.strip())
+  github = dict_to_tuple("github", github_dict)
+  print("::group::GitHub Context")
+  print(yaml.safe_dump(github_dict))
+  print("::endgroup::")
+
   inputs = (inputs or "").strip()
   if inputs:
-    inputs = dict_to_tuple("inputs", _json_load(inputs.strip()))
+    inputs_dict = _json_load(inputs.strip())
+    inputs = dict_to_tuple("inputs", inputs_dict)
+    print("::group::Inputs")
+    print(yaml.safe_dump(tuple_to_dict(inputs)))
+    print("::endgroup::")
 
   cfg_file = Path(__file__).parent / "settings.yml"
   cfg_dict = yaml.safe_load(cfg_file.read_text())
+  print("::group::Static Settings (settings.yml)")
+  print(yaml.safe_dump(cfg_dict))
+  print("::endgroup::")
 
   derived_cfg = settings(clone_dir=CloneDir, cfg=dict_to_tuple("settings", cfg_dict), github=github)
+  print("::group::Dynamic Settings")
+  print(yaml.safe_dump(derived_cfg))
+  print("::endgroup::")
 
   cfg_dict = merge_dicts(derived_cfg, cfg_dict)
-
   cfg_dict = merge_dicts(
     cfg_dict,
     {
@@ -232,11 +250,7 @@ def configuration(
     },
   )
 
-  print("::group::Clone Directory")
-  print(str(CloneDir))
-  print("::endgroup::")
-
-  print("::group::Project Settings")
+  print("::group::Final Project Settings")
   print(yaml.safe_dump(cfg_dict))
   print("::endgroup::")
 

@@ -34,6 +34,7 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
 
   review_state = review_state or ""
 
+  print(f"::group::PR #{pr_no} state")
   if is_draft:
     # Don't perform any checks when the PR is in draft.
     print(f"PR #{pr_no} is still in draft, no validation required yet.")
@@ -84,16 +85,21 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
       )
       print(f"PR #{pr_no} detected review state: '{review_state}'")
       result_full = review_state == "approved"
+    else:
+      print(f"PR #{pr_no} not ready for testing")
+
+  print("::endgroup::")
 
   # Debian testing requires a debian package, and for now we tie it to the full validation
   result_deb = result_full and (clone_dir / "debian" / "control").is_file()
 
-  print(f"PR #{pr_no} job configuration:")
+  print(f"::group::PR #{pr_no} job configuration")
   print(f"- draft: {is_draft}")
   print(f"- event: {github.event_name}")
   print(f"- action: {github.event.action}")
   print(f"- review: {review_state}")
   print(f"- triggers: basic={result_basic}, full={result_full}, deb={result_deb}")
+  print("::endgroup::")
 
   return {
     "BASIC_VALIDATION_BASE_IMAGES": json.dumps(cfg.pull_request.validation.basic.base_images),
