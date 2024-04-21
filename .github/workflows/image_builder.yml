@@ -73,7 +73,7 @@ on:
         required: true
 
 concurrency:
-  group: image-builder-${{ github.ref }}-${{inputs.image-repos}}-${{inputs.image-tags-config}}-${{inputs.image-flavor-config}}-${{ inputs.push && 'push' && 'test' }}
+  group: image-builder-${{ github.ref }}-${{inputs.image-repos}}-${{inputs.base-image}}-${{inputs.image-tags-config}}-${{inputs.image-flavor-config}}-${{inputs.build-platforms}}-${{ inputs.push && 'push' && 'test' }}
   cancel-in-progress: true
 
 permissions:
