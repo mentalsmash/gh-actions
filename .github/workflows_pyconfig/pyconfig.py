@@ -165,7 +165,7 @@ def write_output(
       val = var.lower() if val else ""
     elif not isinstance(val, str):
       val = str(val)
-    print(f"OUTPUT [{var}]: {val}")
+    print(f"{var} = {repr(val)}")
     if "\n" not in val:
       output.write(var)
       output.write("=")
@@ -178,6 +178,7 @@ def write_output(
       output.write("\n")
       output.write("EOF\n")
 
+  print("::group::Step Outputs")
   github_output = Path(os.environ["GITHUB_OUTPUT"])
   with github_output.open("a") as output:
     for var in export_env or []:
@@ -185,6 +186,7 @@ def write_output(
       _output(var, val)
     for var, val in (vars or {}).items():
       _output(var, val)
+  print("::endgroup::")
 
 
 ###############################################################################
@@ -211,7 +213,6 @@ def configuration(
   cfg_file = Path(__file__).parent / "settings.yml"
   cfg_dict = yaml.safe_load(cfg_file.read_text())
 
-  print(f"Clone directory for {github.repository}: {CloneDir}")
   derived_cfg = settings(clone_dir=CloneDir, cfg=dict_to_tuple("settings", cfg_dict), github=github)
 
   cfg_dict = merge_dicts(derived_cfg, cfg_dict)
@@ -225,9 +226,13 @@ def configuration(
     },
   )
 
-  print("=================== PROJECT SETTINGS ===================")
+  print("::group::Clone Directory")
+  print(str(CloneDir))
+  print("::endgroup::")
+
+  print("::group::Project Settings")
   print(yaml.safe_dump(cfg_dict))
-  print("================== //PROJECT SETTINGS ==================")
+  print("::endgroup::")
 
   if as_tuple:
     cfg = dict_to_tuple("settings", cfg_dict)
