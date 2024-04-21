@@ -14,7 +14,7 @@ on:
       - docker/tester/**
       - .github/workflows/image_build_tester.yml
       - .github/workflows/image_builder.yml
-      - .github/workflows/settings.*
+      - .github/workflows_pyconfig/settings.*
 
 concurrency:
   group: image-build-tester
