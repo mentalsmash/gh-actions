@@ -60,12 +60,13 @@ jobs:
       - name: Configure workflow
         id: config
         run: |
-          printf - "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
-          printf - "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
-          printf - "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
-          printf - "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
+          
+          printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
+          printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
+          printf -- "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
+          printf -- "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
 
-          printf - "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
+          printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
         
           printf -- "%s\n" 'DOCKER_TAGS_CONFIG<<TAGSEOF'
           printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
@@ -86,12 +87,12 @@ jobs:
           printf -- "%s\n" "#############################################################"
           printf -- "%s\n" "#############################################################"
           (
-            printf - "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
-            printf - "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
-            printf - "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
-            printf - "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
+            printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
+            printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
+            printf -- "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
+            printf -- "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
 
-            printf - "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
+            printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
           
             printf -- "%s\n" 'DOCKER_TAGS_CONFIG<<TAGSEOF'
             printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
