@@ -102,10 +102,13 @@ jobs:
           image: ${{ needs.config.outputs.ADMIN_IMAGE }}
           token: ${{ secrets.PACKAGE_VERSIONS_PAT }}
           args: |
-            -c ${{ github.run_id }}
+            -c
+            ${{ github.run_id }}
             delete-versions
-            -o ${{ needs.config.outputs.PRERELEASE_PACKAGE_ORG }}
-            -p ${{ needs.config.outputs.PRERELEASE_PACKAGE }}
+            -o
+            ${{ needs.config.outputs.PRERELEASE_PACKAGE_ORG }}
+            -p
+            ${{ needs.config.outputs.PRERELEASE_PACKAGE }}
             --if-package-exists
 
       - name: Build image
