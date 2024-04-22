@@ -22,11 +22,11 @@ permissions:
 
 jobs:
   release-docker:
-    uses: ./.github/workflows/release_deb.yml
+    uses: ./.github/workflows/release_docker.yml
     secrets: inherit
   
   release-deb:
-    uses: ./.github/workflows/release_docker.yml
+    uses: ./.github/workflows/release_deb.yml
     secrets: inherit
 
   summary:

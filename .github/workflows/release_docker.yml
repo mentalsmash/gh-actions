@@ -51,6 +51,7 @@ jobs:
         id: config
         run: |
           (
+            printf -- "BUILD_SETTINGS_ARTIFACT=%s\n" "$(jq '.build.settings.artifact' -j pyconfig.json)"
             printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
             printf -- "%s\n" "DOCKER_TAGS_CONFIG<<EOF"
             printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
@@ -75,7 +76,7 @@ jobs:
       - name: Upload project settings
         uses: actions/upload-artifact@v4
         with:
-          name: release-settings
+          name: ${{ steps.config.outputs.BUILD_SETTINGS_ARTIFACT }}
           path: pyconfig.json
 
   build:

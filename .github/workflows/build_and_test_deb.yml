@@ -81,7 +81,7 @@ jobs:
           ) | tee -a ${GITHUB_OUTPUT}
 
 
-  build-packages:
+  build:
     needs: config
     runs-on: ${{ fromJson(needs.config.outputs.DEB_RUNNER) }}
     steps:
@@ -120,10 +120,10 @@ jobs:
           chown -Rv $(id -u):$(id -g) /repo
       if: always()
 
-  test-packages:
+  test:
     needs:
       - config
-      - build-packages
+      - build
     runs-on: ${{ fromJson(needs.config.outputs.DEB_RUNNER) }}
     steps:
     - name: Clone source repository

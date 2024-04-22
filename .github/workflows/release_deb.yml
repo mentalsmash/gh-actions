@@ -48,8 +48,7 @@ jobs:
             echo DEB_ENABLED=$(jq '.debian.enabled' -r pyconfig.json)
           ) | tee -a ${GITHUB_OUTPUT}
 
-
-  build:
+  build-n-test:
     needs: config
     if: needs.config.outputs.DEB_ENABLED
     strategy:
@@ -63,10 +62,10 @@ jobs:
       build-architecture: ${{ matrix.build-architecture }}
 
   push:
-    if: github.ref_type == 'tag'
+    if: needs.config.outputs.DEB_ENABLED && github.ref_type == 'tag'
     needs:
       - config
-      - build
+      - build-n-test
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
