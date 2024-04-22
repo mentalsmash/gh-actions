@@ -41,7 +41,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
 
   build_date = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-  build_settings_artifact = f"{repo}-settings__{cfg.build.date}"
+  build_settings_artifact = f"{repo}-settings__{build_date}"
 
   #############################################################################
   # Container Release settings
