@@ -68,10 +68,10 @@ jobs:
 
             echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -r pyconfig.json)
             echo 'DOCKER_TAGS_CONFIG<<EOF'
-            jq '.release.tags_config' -r pyconfig.json
+            echo $(jq '.release.tags_config' -r pyconfig.json)
             echo EOF
             echo 'DOCKER_FLAVOR_CONFIG<<EOF'
-            jq '.release.flavor_config' -r pyconfig.json
+            echo $(jq '.release.flavor_config' -r pyconfig.json)
             echo EOF
             echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r pyconfig.json)
 
