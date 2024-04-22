@@ -44,13 +44,13 @@ jobs:
           (
             echo TEST_ID=$(jq '.TEST_ID' -jrpyconfig.json)
             echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jrpyconfig.json)
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -j pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -j pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -j pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -j pyconfig.json)
-            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -j pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -j pyconfig.json)
-            echo TEST_RUNNERS_MATRIXc$(jq '.release.test_runners_matrix' -j pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -r pyconfig.json)
+            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -r pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
+            echo TEST_RUNNERS_MATRIXc$(jq '.release.test_runners_matrix' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
   test:

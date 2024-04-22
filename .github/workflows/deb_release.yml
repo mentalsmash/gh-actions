@@ -42,10 +42,10 @@ jobs:
         id: config
         run: 
           (
-            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)
-            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)
-            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -j pyconfig.json)
-            echo DEB_ENABLED=$(jq '.debian.enabled' -j pyconfig.json)
+            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
+            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -r pyconfig.json)
+            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
+            echo DEB_ENABLED=$(jq '.debian.enabled' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
 

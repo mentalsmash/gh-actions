@@ -42,7 +42,7 @@ jobs:
         id: config
         run: 
           (
-            echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -j pyconfig.json)
+            echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"

@@ -37,18 +37,18 @@ jobs:
         id: config
         run: 
           (
-            echo CLONE_DIR=$(jq '.build.clone_dir' -j pyconfig.json)
-            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -j pyconfig.json)
+            echo CLONE_DIR=$(jq '.build.clone_dir' -r pyconfig.json)
+            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -r pyconfig.json)
             echo "DOCKER_TAGS_CONFIG<<EOF"
-            jq '.release.tags_config' -j pyconfig.json
+            jq '.release.tags_config' -r pyconfig.json
             echo EOF
             echo "DOCKER_FLAVOR_CONFIG=EOF"
-            jq '.release.flavor_config' -j pyconfig.json
+            jq '.release.flavor_config' -r pyconfig.json
             echo EOF
-            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -j pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -j pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -j pyconfig.json)
-            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -j pyconfig.json)
+            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -r pyconfig.json)
+            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
       
       - name: Build image
