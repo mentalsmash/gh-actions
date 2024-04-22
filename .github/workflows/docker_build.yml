@@ -1,4 +1,4 @@
-name: Docker Build (Periodict Trigger)
+name: Docker Build (Periodic Trigger)
 run-name: docker build [periodic trigger]
 
 on:
