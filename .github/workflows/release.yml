@@ -86,33 +86,6 @@ jobs:
             printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
             printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -j pyconfig.json)"
             printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
-
-            # echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -j pyconfig.json)
-            # echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)
-            # echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)
-            # echo DEB_ENABLED=$(jq '.debian.enabled' -j pyconfig.json)
-
-            # echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -j pyconfig.json)
-            # echo 'DOCKER_TAGS_CONFIG<<EOF'
-            # echo $(jq '.release.tags_config' -j pyconfig.json)
-            # echo EOF
-            # echo 'DOCKER_FLAVOR_CONFIG<<EOF'
-            # echo $(jq '.release.flavor_config' -j pyconfig.json)
-            # echo EOF
-            # echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -j pyconfig.json)
-
-            # echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -j pyconfig.json)
-            # echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -j pyconfig.json)
-
-            # echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -j pyconfig.json)
-            # echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -j pyconfig.json)
-
-            # echo RELEASE_REPOS=$(jq '.release.final_repos_config' -j pyconfig.json)
-
-            # echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -j pyconfig.json)
-            # echo TEST_DATE=$(jq '.build.date' -j pyconfig.json)
-            # echo TEST_ID=$(jq '.TEST_ID' -j pyconfig.json)
-            # echo TEST_RUNNERS_MATRIX=$(jq '.release.test_runners_matrix' -j pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
       - name: Upload project settings
