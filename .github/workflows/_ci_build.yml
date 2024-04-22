@@ -65,15 +65,15 @@ jobs:
         id: config
         run: 
           (
-            echo CI_RUNNER=$(jq '.CI_RUNNER' -r .pyconfig.json)
-            echo LOCAL_TESTER_IMAGE_BASE_IMAGE=$(jq '.LOCAL_TESTER_IMAGE_BASE_IMAGE' -r .pyconfig.json)
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r .pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -r .pyconfig.json)
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r .pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r .pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r .pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r .pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -r .pyconfig.json)
+            echo CI_RUNNER=$(jq '.CI_RUNNER' -r pyconfig.json)
+            echo LOCAL_TESTER_IMAGE_BASE_IMAGE=$(jq '.LOCAL_TESTER_IMAGE_BASE_IMAGE' -r pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
       - name: Validate code

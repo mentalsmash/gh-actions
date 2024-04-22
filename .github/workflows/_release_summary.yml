@@ -32,15 +32,15 @@ jobs:
       id: config
       run: 
         (
-          echo BADGE_BASE_IMAGE_COLOR=$(jq '.release.badge.base_image.color' -r .pyconfig.json)
-          echo BADGE_BASE_IMAGE_FILENAME=$(jq '.release.badge.base_image.filename' -r .pyconfig.json)
-          echo BADGE_BASE_IMAGE_GIST=$(jq '.release.badge.base_image.gist' -r .pyconfig.json)
-          echo BADGE_BASE_IMAGE_MESSAGE=$(jq '.release.badge.base_image.message' -r .pyconfig.json)
-          echo BADGE_VERSION_COLOR=$(jq '.release.badge.version.color' -r .pyconfig.json)
-          echo BADGE_VERSION_FILENAME=$(jq '.release.badge.version.filename' -r .pyconfig.json)
-          echo BADGE_VERSION_GIST=$(jq '.release.badge.version.gist' -r .pyconfig.json)
-          echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -r .pyconfig.json)
-          echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r .pyconfig.json)
+          echo BADGE_BASE_IMAGE_COLOR=$(jq '.release.badge.base_image.color' -r pyconfig.json)
+          echo BADGE_BASE_IMAGE_FILENAME=$(jq '.release.badge.base_image.filename' -r pyconfig.json)
+          echo BADGE_BASE_IMAGE_GIST=$(jq '.release.badge.base_image.gist' -r pyconfig.json)
+          echo BADGE_BASE_IMAGE_MESSAGE=$(jq '.release.badge.base_image.message' -r pyconfig.json)
+          echo BADGE_VERSION_COLOR=$(jq '.release.badge.version.color' -r pyconfig.json)
+          echo BADGE_VERSION_FILENAME=$(jq '.release.badge.version.filename' -r pyconfig.json)
+          echo BADGE_VERSION_GIST=$(jq '.release.badge.version.gist' -r pyconfig.json)
+          echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -r pyconfig.json)
+          echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
         ) >> ${GITHUB_OUTPUT}
 
     - name: Download all artifacts

@@ -61,39 +61,39 @@ jobs:
         id: config
         run: 
           (
-            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r .pyconfig.json)
-            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r .pyconfig.json)
-            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -r .pyconfig.json)
-            echo DEB_ENABLED=$(jq '.debian.enabled' -r .pyconfig.json)
+            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
+            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
+            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -r pyconfig.json)
+            echo DEB_ENABLED=$(jq '.debian.enabled' -r pyconfig.json)
 
-            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -r .pyconfig.json)
+            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -r pyconfig.json)
             echo 'DOCKER_TAGS_CONFIG<<EOF'
-            jq '.release.tags_config' -r .pyconfig.json
+            jq '.release.tags_config' -r pyconfig.json
             echo EOF
             echo 'DOCKER_FLAVOR_CONFIG<<EOF'
-            jq '.release.flavor_config' -r .pyconfig.json
+            jq '.release.flavor_config' -r pyconfig.json
             echo EOF
-            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r .pyconfig.json)
+            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r pyconfig.json)
 
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r .pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r .pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
 
-            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -r .pyconfig.json)
-            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -r .pyconfig.json)
+            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -r pyconfig.json)
+            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -r pyconfig.json)
 
-            echo RELEASE_REPOS=$(jq '.release.final_repos_config' -r .pyconfig.json)
+            echo RELEASE_REPOS=$(jq '.release.final_repos_config' -r pyconfig.json)
 
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r .pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -r .pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -r .pyconfig.json)
-            echo TEST_RUNNERS_MATRIX=$(jq '.release.test_runners_matrix' -r .pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
+            echo TEST_RUNNERS_MATRIX=$(jq '.release.test_runners_matrix' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
       - name: Upload project settings
         uses: actions/upload-artifact@v4
         with:
           name: release-settings
-          path: .pyconfig.json
+          path: pyconfig.json
 
   build:
     needs: config
@@ -110,11 +110,11 @@ jobs:
         with:
           base-image: ${{ needs.config.outputs.DOCKER_BASE_IMAGE }}
           build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
-          dockerfile: ${{ env.CLONE_DIR }}/docker/Dockerfile
           context: ${{ env.CLONE_DIR }}
-          image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
-          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/Dockerfile
           image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           github-user: ${{ github.actor }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

@@ -52,12 +52,12 @@ jobs:
         id: config
         run: 
           (
-            echo CLONE_DIR=$(jq '.build.clone_dir' -r .pyconfig.json)
-            echo TESTER_IMAGE_REPO=$(jq '.ci.images.tester.repo' -r .pyconfig.json)
-            echo TESTER_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.tester.build_platforms_config' -r .pyconfig.json)
-            echo TESTER_IMAGE_BASE_IMAGE_MATRIX=$(jq '.ci.images.tester.base_images_matrix' -r .pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r .pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r .pyconfig.json)
+            echo CLONE_DIR=$(jq '.build.clone_dir' -r pyconfig.json)
+            echo TESTER_IMAGE_REPO=$(jq '.ci.images.tester.repo' -r pyconfig.json)
+            echo TESTER_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.tester.build_platforms_config' -r pyconfig.json)
+            echo TESTER_IMAGE_BASE_IMAGE_MATRIX=$(jq '.ci.images.tester.base_images_matrix' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
   build:
