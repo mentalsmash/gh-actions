@@ -63,7 +63,10 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
     if not cfg.release.prerelease_package
     else (f"{cfg.release.prerelease_package}-{build_profile}")
   )
-  prerel_package_org = "" if not prerel_package else (prerel_package.split("/")[0])
+  if prerel_package:
+    prerel_package_org, prerel_package = prerel_package.split("/")
+  else:
+    prerel_package_org, prerel_package = "", ""
   prerel_registries = extract_registries(
     repo_org,
     [
