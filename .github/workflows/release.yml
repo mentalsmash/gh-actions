@@ -86,26 +86,6 @@ jobs:
             printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
-      - name: Debug outputs
-        run: |
-          printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "${{ steps.config.outputs.DEB_ARTIFACTS_PREFIX }}"
-          printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "${{ steps.config.outputs.DEB_BASE_IMAGES_MATRIX }}"
-          printf -- "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "${{ steps.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX }}"
-          printf -- "DEB_ENABLED=%s\n" "${{ steps.config.outputs.DEB_ENABLED }}"
-          printf -- "DOCKER_BASE_IMAGE=%s\n" "${{ steps.config.outputs.DOCKER_BASE_IMAGE }}"
-          printf -- "DOCKER_TAGS_CONFIG=%s\n" ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
-          printf -- "DOCKER_FLAVOR_CONFIG=%s\n" ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
-          printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}"
-          printf -- "LOCAL_TESTER_IMAGE=%s\n" "${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}"
-          printf -- "LOCAL_TESTER_RESULTS=%s\n" "${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}"
-          printf -- "PRERELEASE_REPO=%s\n" "${{ steps.config.outputs.PRERELEASE_REPO }}"
-          printf -- "PRERELEASE_IMAGE=%s\n" "${{ steps.config.outputs.PRERELEASE_IMAGE }}"
-          printf -- "RELEASE_REPOS=%s\n" "${{ steps.config.outputs.RELEASE_REPOS }}"
-          printf -- "TEST_ARTIFACT=%s\n" "${{ steps.config.outputs.TEST_ARTIFACT }}"
-          printf -- "TEST_DATE=%s\n" "${{ steps.config.outputs.TEST_DATE }}"
-          printf -- "TEST_ID=%s\n" "${{ steps.config.outputs.TEST_ID }}"
-          printf -- "TEST_RUNNERS_MATRIX=%s\n" "${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}"
-          
       - name: Upload project settings
         uses: actions/upload-artifact@v4
         with:

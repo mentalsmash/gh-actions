@@ -50,7 +50,7 @@ jobs:
   
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             echo CLONE_DIR=$(jq '.build.clone_dir' -r pyconfig.json)
             echo DEB_BUILDER_IMAGE_REPO=$(jq '.debian.builder.repo' -r pyconfig.json)

@@ -65,7 +65,7 @@ jobs:
 
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -r pyconfig.json)
             echo DEB_BUILDER=$(jq '.DEB_BUILDER' -r pyconfig.json)

@@ -34,7 +34,7 @@ jobs:
 
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r pyconfig.json)
             echo "DOCKER_FLAVOR_CONFIG<<EOF"

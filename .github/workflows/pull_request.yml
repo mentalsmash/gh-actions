@@ -60,7 +60,7 @@ jobs:
   
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             BASIC_VALIDATION_BASE_IMAGES=$(jq '.BASIC_VALIDATION_BASE_IMAGES' -r pyconfig.json)
             BASIC_VALIDATION_BUILD_PLATFORMS=$(jq '.BASIC_VALIDATION_BUILD_PLATFORMS' -r pyconfig.json)

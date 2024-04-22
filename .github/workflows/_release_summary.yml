@@ -30,7 +30,7 @@ jobs:
 
     - name: Configure workflow
       id: config
-      run: 
+      run: |
         (
           echo BADGE_BASE_IMAGE_COLOR=$(jq '.release.badge.base_image.color' -r pyconfig.json)
           echo BADGE_BASE_IMAGE_FILENAME=$(jq '.release.badge.base_image.filename' -r pyconfig.json)

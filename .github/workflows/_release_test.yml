@@ -40,7 +40,7 @@ jobs:
 
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             echo TEST_ID=$(jq '.TEST_ID' -jrpyconfig.json)
             echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jrpyconfig.json)

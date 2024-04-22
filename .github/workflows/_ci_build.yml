@@ -63,7 +63,7 @@ jobs:
 
       - name: Configure workflow
         id: config
-        run: 
+        run: |
           (
             echo CI_RUNNER=$(jq '.CI_RUNNER' -r pyconfig.json)
             echo LOCAL_TESTER_IMAGE_BASE_IMAGE=$(jq '.LOCAL_TESTER_IMAGE_BASE_IMAGE' -r pyconfig.json)
