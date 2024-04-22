@@ -8,7 +8,7 @@ on:
   workflow_call:
 
 concurrency:
-  group: deb-release-${{ github.ref }}
+  group: deb-release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}
   cancel-in-progress: true
 
 permissions:

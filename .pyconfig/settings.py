@@ -57,7 +57,13 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   else:
     docker_flavor_config = ""
 
-  prerel_image = f"{cfg.release.prerelease_repo}:{release_tag}"
+  prerel_image = f"{cfg.release.prerelease_repo}-{build_profile}:{release_tag}"
+  prerel_package = (
+    ""
+    if not cfg.release.prerelease_package
+    else (f"{cfg.release.prerelease_package}-{build_profile}")
+  )
+  prerel_package_org = "" if not prerel_package else (prerel_package.split("/")[0])
   prerel_registries = extract_registries(
     repo_org,
     [
@@ -211,6 +217,8 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "build_platforms_config": docker_build_platforms,
         "flavor_config": docker_flavor_config,
         "prerelease_image": prerel_image,
+        "prerelease_package": prerel_package,
+        "prerelease_package_org": prerel_package_org,
         "final_repos_config": final_repos_config,
         "final_images": release_images,
         "login": {

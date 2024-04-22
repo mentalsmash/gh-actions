@@ -70,7 +70,14 @@ release:
   - ghcr.io/mentalsmash/ref-project-debdocker
   - mentalsmash/ref-project-debdocker
   # Push pre-release image to GitHub for testing
-  prerelease_repo: ghcr.io/mentalsmash/ref-project-debdocker-test
+  prerelease_repo: ghcr.io/mentalsmash/ref-project-debdocker-rc
+  prerelease_package: mentalsmash/ref-project-debdocker-rc
+
+  tracker:
+    repository: mentalsmash/ref-project-debdocker-release
+    user:
+      name: Automated Release Tracker
+      email: mentalsmash-admin@users.noreply.github.com
 
   profiles:
     nightly:
@@ -122,3 +129,4 @@ release:
         type=semver,pattern={{version}}
         type=semver,pattern={{major}}.{{minor}}
         type=semver,pattern={{major}}
+
