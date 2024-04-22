@@ -45,14 +45,14 @@ jobs:
         id: config
         run: 
           (
-            echo ADMIN_IMAGE_REPO=$(jq '.ci.images.admin.repo' -jr .pyconfig.json)
+            echo ADMIN_IMAGE_REPO=$(jq '.ci.images.admin.repo' -r .pyconfig.json)
             echo "ADMIN_IMAGE_TAGS_CONFIG<<EOF"
-            jq '.ci.images.admin.tags_config' -jr .pyconfig.json
+            jq '.ci.images.admin.tags_config' -r .pyconfig.json
             echo EOF
-            echo ADMIN_IMAGE_BASE_IMAGE=$(jq '.ci.images.admin.base_image' -jr .pyconfig.json)
-            echo ADMIN_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.admin.build_platforms_config' -jr .pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -jr .pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -jr .pyconfig.json)
+            echo ADMIN_IMAGE_BASE_IMAGE=$(jq '.ci.images.admin.base_image' -r .pyconfig.json)
+            echo ADMIN_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.admin.build_platforms_config' -r .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -r .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -r .pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
       
       - name: Build image

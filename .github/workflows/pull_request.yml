@@ -62,15 +62,15 @@ jobs:
         id: config
         run: 
           (
-            BASIC_VALIDATION_BASE_IMAGES=$(jq '.BASIC_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
-            BASIC_VALIDATION_BUILD_PLATFORMS=$(jq '.BASIC_VALIDATION_BUILD_PLATFORMS' -jr .pyconfig.json)
-            DEB_VALIDATION_BASE_IMAGES=$(jq '.DEB_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
-            DEB_VALIDATION_BUILD_ARCHITECTURES=$(jq '.DEB_VALIDATION_BUILD_ARCHITECTURES' -jr .pyconfig.json)
-            FULL_VALIDATION_BASE_IMAGES=$(jq '.FULL_VALIDATION_BASE_IMAGES' -jr .pyconfig.json)
-            FULL_VALIDATION_BUILD_PLATFORMS=$(jq '.FULL_VALIDATION_BUILD_PLATFORMS' -jr .pyconfig.json)
-            VALIDATE_BASIC=$(jq '.VALIDATE_BASIC' -jr .pyconfig.json)
-            VALIDATE_DEB=$(jq '.VALIDATE_DEB' -jr .pyconfig.json)
-            VALIDATE_FULL=$(jq '.VALIDATE_FULL' -jr .pyconfig.json)
+            BASIC_VALIDATION_BASE_IMAGES=$(jq '.BASIC_VALIDATION_BASE_IMAGES' -r .pyconfig.json)
+            BASIC_VALIDATION_BUILD_PLATFORMS=$(jq '.BASIC_VALIDATION_BUILD_PLATFORMS' -r .pyconfig.json)
+            DEB_VALIDATION_BASE_IMAGES=$(jq '.DEB_VALIDATION_BASE_IMAGES' -r .pyconfig.json)
+            DEB_VALIDATION_BUILD_ARCHITECTURES=$(jq '.DEB_VALIDATION_BUILD_ARCHITECTURES' -r .pyconfig.json)
+            FULL_VALIDATION_BASE_IMAGES=$(jq '.FULL_VALIDATION_BASE_IMAGES' -r .pyconfig.json)
+            FULL_VALIDATION_BUILD_PLATFORMS=$(jq '.FULL_VALIDATION_BUILD_PLATFORMS' -r .pyconfig.json)
+            VALIDATE_BASIC=$(jq '.VALIDATE_BASIC' -r .pyconfig.json)
+            VALIDATE_DEB=$(jq '.VALIDATE_DEB' -r .pyconfig.json)
+            VALIDATE_FULL=$(jq '.VALIDATE_FULL' -r .pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
   basic-validation:

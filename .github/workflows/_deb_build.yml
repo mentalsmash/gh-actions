@@ -67,17 +67,17 @@ jobs:
         id: config
         run: 
           (
-            echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -jr .pyconfig.json)
-            echo DEB_BUILDER=$(jq '.DEB_BUILDER' -jr .pyconfig.json)
-            echo DEB_RUNNER=$(jq '.DEB_RUNNER' -jr .pyconfig.json)
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jr .pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -jr .pyconfig.json)
-            echo DEB_DIST_DIR=$(jq '.debian.artifacts.dist_dir' -jr .pyconfig.json)
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -jr .pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -jr .pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -jr .pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -jr .pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -jr .pyconfig.json)
+            echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -r .pyconfig.json)
+            echo DEB_BUILDER=$(jq '.DEB_BUILDER' -r .pyconfig.json)
+            echo DEB_RUNNER=$(jq '.DEB_RUNNER' -r .pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r .pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -r .pyconfig.json)
+            echo DEB_DIST_DIR=$(jq '.debian.artifacts.dist_dir' -r .pyconfig.json)
+            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r .pyconfig.json)
+            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r .pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r .pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r .pyconfig.json)
+            echo TEST_DATE=$(jq '.build.date' -r .pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
 
