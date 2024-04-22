@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ADMIN_IMAGE: ${{ steps.config.outputs.ADMIN_IMAGE }}
+      BUILD_PROFILE: ${{ steps.config.outputs.BUILD_PROFILE }}
+      BUILD_VERSION: ${{ steps.config.outputs.BUILD_VERSION }}
       DOCKER_BASE_IMAGE: ${{ steps.config.outputs.DOCKER_BASE_IMAGE }}
       DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
       DOCKER_FLAVOR_CONFIG: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
@@ -33,11 +35,15 @@ jobs:
       PRERELEASE_PACKAGE_ORG: ${{ steps.config.outputs.PRERELEASE_PACKAGE_ORG }}
       PRERELEASE_REPO: ${{ steps.config.outputs.PRERELEASE_REPO }}
       PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+      RELEASE_FINAL_IMAGES: ${{ steps.config.outputs.RELEASE_FINAL_IMAGES }}
       RELEASE_REPOS: ${{ steps.config.outputs.RELEASE_REPOS }}
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
       TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
+      TRACKER_USER_NAME: ${{ steps.config.outputs.TRACKER_USER_NAME }}
+      TRACKER_USER_EMAIL: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
+      TRACKER_REPO: ${{ steps.config.outputs.TRACKER_REPO }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -55,13 +61,19 @@ jobs:
         run: |
           (
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
+            printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
             printf -- "BUILD_SETTINGS_ARTIFACT=%s\n" "$(jq '.build.settings.artifact' -j pyconfig.json)"
+            printf -- "BUILD_VERSION=%s\n" "$(jq '.build.version' -r pyconfig.json)"
             printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
             printf -- "%s\n" "DOCKER_TAGS_CONFIG<<EOF"
-            printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
+            # printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
+            jq '.release.tags_config' -j pyconfig.json
+            echo
             printf -- "%s\n" EOF
             printf -- "%s\n" "DOCKER_FLAVOR_CONFIG<<EOF"
-            printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json)"
+            # printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json)"
+            jq '.release.flavor_config' -j pyconfig.json
+            echo
             printf -- "%s\n" EOF
             printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
             printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
@@ -71,12 +83,22 @@ jobs:
             printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
             printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
             printf -- "%s\n" "RELEASE_REPOS<<EOF"
-            printf -- "%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
+            # printf -- "%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
+            jq '.release.final_repos_config' -j pyconfig.json
+            echo
             printf -- "%s\n" EOF
+            echo "RELEASE_FINAL_IMAGES<<EOF"
+            # printf -- "%s\n" "$(jq '.release.final_images' -r pyconfig.json)"
+            jq '.release.final_images' -r pyconfig.json
+            echo
+            echo EOF
             printf -- "TEST_ARTIFACT=%s\n" "$(jq '.release.test_artifact' -j pyconfig.json)"
             printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
             printf -- "TEST_ID=%s\n" "$(jq '.release.test_id' -j pyconfig.json)"
             printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
+            printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
+            printf -- "TRACKER_USER_EMAIL=%s\n" "$(jq '.release.tracker.user.email' -r pyconfig.json)"
+            printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: Upload project settings
@@ -197,6 +219,14 @@ jobs:
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
+      
+      - name: Clone release tracker
+        uses: mentalsmash/actions/release-tracker/checkout@master
+        with:
+          repository: ${{ needs.config.outputs.TRACKER_REPO }}
+          user-name: ${{ needs.config.outputs.TRACKER_USER_NAME }}
+          user-email: ${{ needs.config.outputs.TRACKER_USER_EMAIL }}
+          token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
 
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master
@@ -213,3 +243,11 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
           action: push
+  
+      - name: Create and push release tracker entry
+        uses: mentalsmash/actions/release-tracker/add-docker@master
+        with:
+          repository: ${{ needs.config.outputs.TRACKER_REPO }}
+          track: ${{ needs.config.outputs.BUILD_PROFILE }}
+          version: ${{ needs.config.outputs.BUILD_VERSION }}
+          images: ${{ needs.config.outputs.RELEASE_FINAL_IMAGES }}

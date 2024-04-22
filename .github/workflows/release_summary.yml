@@ -41,34 +41,8 @@ jobs:
           echo BADGE_VERSION_FILENAME=$(jq '.release.badge.version.filename' -r pyconfig.json)
           echo BADGE_VERSION_GIST=$(jq '.release.badge.version.gist' -r pyconfig.json)
           echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -r pyconfig.json)
-          echo BUILD_PROFILE=$(jq '.build.profile' -r pyconfig.json)
-          echo BUILD_VERSION=$(jq '.build.version' -r pyconfig.json)
           echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
-          echo "RELEASE_FINAL_IMAGES<<EOF"
-          printf -- "%s\n" "$(jq '.release.final_images' -r pyconfig.json)"
-          echo EOF
-          echo TRACKER_USER_NAME=$(jq '.release.tracker.user.name' -r pyconfig.json)
-          echo TRACKER_USER_EMAIL=$(jq '.release.tracker.user.email' -r pyconfig.json)
-          echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
         ) | tee -a ${GITHUB_OUTPUT}
-
-    - name: Clone release tracker
-      uses: mentalsmash/actions/release-tracker/checkout@master
-      with:
-        repository: ${{ steps.config.outputs.TRACKER_REPO }}
-        path: ${{ env.TRACKER_DIR }}
-        user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
-        user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
-        token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
-
-    - name: Create and push release tracker entry
-      uses: mentalsmash/actions/release-tracker/add-docker@master
-      with:
-        repository: ${{ steps.config.outputs.TRACKER_REPO }}
-        path: ${{ env.TRACKER_DIR }}
-        track: ${{ steps.config.outputs.BUILD_PROFILE }}
-        version: ${{ steps.config.outputs.BUILD_VERSION }}
-        images: ${{ steps.config.outputs.RELEASE_FINAL_IMAGES }}
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
