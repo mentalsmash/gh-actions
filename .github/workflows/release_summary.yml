@@ -52,18 +52,23 @@ jobs:
           echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
         ) | tee -a ${GITHUB_OUTPUT}
 
-    - name: Create release tracker entry
-      uses: mentalsmash/actions/release-tracker/commit-docker@master
+    - name: Clone release tracker
+      uses: mentalsmash/actions/release-tracker/checkout@master
       with:
-        tracks-dir: ${{ env.TRACKER_DIR }}/releases
+        repository: ${{ steps.config.outputs.TRACKER_REPO }}
+        path: ${{ env.TRACKER_DIR }}
+        user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
+        user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
+        token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
+
+    - name: Create and push release tracker entry
+      uses: mentalsmash/actions/release-tracker/add-docker@master
+      with:
+        repository: ${{ steps.config.outputs.TRACKER_REPO }}
+        path: ${{ env.TRACKER_DIR }}
         track: ${{ steps.config.outputs.BUILD_PROFILE }}
         version: ${{ steps.config.outputs.BUILD_VERSION }}
         images: ${{ steps.config.outputs.RELEASE_FINAL_IMAGES }}
-        repository: ${{ steps.config.outputs.TRACKER_REPO }}
-        repository-dir: ${{ env.TRACKER_DIR }}
-        repository-user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
-        repository-user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
-        repository-token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4

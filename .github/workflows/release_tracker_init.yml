@@ -38,12 +38,18 @@ jobs:
             echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
           ) | tee -a ${GITHUB_OUTPUT}
 
+      - name: Clone release tracker
+        uses: mentalsmash/actions/release-tracker/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.TRACKER_REPO }}
+          path: ${{ env.TRACKER_DIR }}
+          user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
+          user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
+          token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
+
       - name: Initialize release tracker
         uses: mentalsmash/actions/release-tracker/initialize@master
         with:
-          tracks-dir: ${{ env.TRACKER_DIR }}/releases
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
-          repository-dir: ${{ env.TRACKER_DIR }}
-          repository-user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
-          repository-user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
-          repository-token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
+          path: ${{ env.TRACKER_DIR }}
+
