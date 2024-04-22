@@ -60,32 +60,6 @@ jobs:
       - name: Configure workflow
         id: config
         run: |
-          
-          printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
-          printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
-          printf -- "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
-          printf -- "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
-
-          printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
-        
-          printf -- "%s\n" 'DOCKER_TAGS_CONFIG<<TAGSEOF'
-          printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
-          printf -- "%s\n" TAGSEOF
-          printf -- "%s\n" 'DOCKER_FLAVOR_CONFIG<<FLAVOREOF'
-          printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json)"
-          printf -- "%s\n" FLAVOREOF
-          printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
-          printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
-          printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
-          printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
-          printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
-          printf -- "RELEASE_REPOS=%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
-          printf -- "TEST_ARTIFACT=%s\n" "$(jq '.TEST_ARTIFACT' -j pyconfig.json)"
-          printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
-          printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -j pyconfig.json)"
-          printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
-          printf -- "%s\n" "#############################################################"
-          printf -- "%s\n" "#############################################################"
           (
             printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
             printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
@@ -103,14 +77,14 @@ jobs:
             printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
             printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
             printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
-            printf -- "RELEASE_REPOS=%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
-            printf -- "%s\n" "TEST_ARTIFACT<<EOF"
-            printf -- "%s\n" "$(jq '.TEST_ARTIFACT' -j pyconfig.json)"
+            printf -- "%s\n" "RELEASE_REPOS<<EOF"
+            printf -- "%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
             printf -- "%s\n" EOF
+            printf -- "TEST_ARTIFACT=%s\n" "$(jq '.TEST_ARTIFACT' -j pyconfig.json)"
             printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
             printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -j pyconfig.json)"
             printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
       - name: Debug outputs
         run: |
