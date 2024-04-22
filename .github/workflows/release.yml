@@ -61,28 +61,48 @@ jobs:
         id: config
         run: 
           set -x
-          printf - "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf - "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf - "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf - "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf - "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf - "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf - "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf - "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf - "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf - "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
           printf -- "%s\n" 'DOCKER_TAGS_CONFIG<<EOF' >> ${GITHUB_OUTPUT}
-          printf -- "%s\n" "$(jq '.release.tags_config' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
           printf -- "%s\n" EOF >> ${GITHUB_OUTPUT}
           printf -- "%s\n" 'DOCKER_FLAVOR_CONFIG<<EOF' >> ${GITHUB_OUTPUT}
-          printf -- "%s\n" "$(jq '.release.flavor_config' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
           printf -- "%s\n" EOF   >> ${GITHUB_OUTPUT}
-          printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "RELEASE_REPOS=%s\n" "$(jq '.release.final_repos_config' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "TEST_ARTIFACT=%s\n" "$(jq '.TEST_ARTIFACT' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
-          printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -c pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "RELEASE_REPOS=%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "TEST_ARTIFACT=%s\n" "$(jq '.TEST_ARTIFACT' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
+          printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json.json)" >> ${GITHUB_OUTPUT}
 
+      - name: Debug outputs
+        run: |
+          printf -- "DEB_ARTIFACTS_PREFIX=%s\n" "${{ steps.config.outputs.DEB_ARTIFACTS_PREFIX }}"
+          printf -- "DEB_BASE_IMAGES_MATRIX=%s\n" "${{ steps.config.outputs.DEB_BASE_IMAGES_MATRIX }}"
+          printf -- "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "${{ steps.config.outputs.DEB_BUILD_ARCHITECTURES_MATRIX }}"
+          printf -- "DEB_ENABLED=%s\n" "${{ steps.config.outputs.DEB_ENABLED }}"
+          printf -- "DOCKER_BASE_IMAGE=%s\n" "${{ steps.config.outputs.DOCKER_BASE_IMAGE }}"
+          printf -- "DOCKER_TAGS_CONFIG=%s\n" ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+          printf -- "DOCKER_FLAVOR_CONFIG=%s\n" ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}"
+          printf -- "LOCAL_TESTER_IMAGE=%s\n" "${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}"
+          printf -- "LOCAL_TESTER_RESULTS=%s\n" "${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}"
+          printf -- "PRERELEASE_REPO=%s\n" "${{ steps.config.outputs.PRERELEASE_REPO }}"
+          printf -- "PRERELEASE_IMAGE=%s\n" "${{ steps.config.outputs.PRERELEASE_IMAGE }}"
+          printf -- "RELEASE_REPOS=%s\n" "${{ steps.config.outputs.RELEASE_REPOS }}"
+          printf -- "TEST_ARTIFACT=%s\n" "${{ steps.config.outputs.TEST_ARTIFACT }}"
+          printf -- "TEST_DATE=%s\n" "${{ steps.config.outputs.TEST_DATE }}"
+          printf -- "TEST_ID=%s\n" "${{ steps.config.outputs.TEST_ID }}"
+          printf -- "TEST_RUNNERS_MATRIX=%s\n" "${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}"
+          
       - name: Upload project settings
         uses: actions/upload-artifact@v4
         with:
