@@ -61,32 +61,58 @@ jobs:
         id: config
         run: 
           (
-            echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
-            echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
-            echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -r pyconfig.json)
-            echo DEB_ENABLED=$(jq '.debian.enabled' -r pyconfig.json)
+            printf - "DEB_ARTIFACTS_PREFIX=%s\n" "$(jq '.debian.artifacts.prefix' -j pyconfig.json)"
+            printf - "DEB_BASE_IMAGES_MATRIX=%s\n" "$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)"
+            printf - "DEB_BUILD_ARCHITECTURES_MATRIX=%s\n" "$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)"
+            printf - "DEB_ENABLED=%s\n" "$(jq '.debian.enabled' -j pyconfig.json)"
+            printf - "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
 
-            echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -r pyconfig.json)
-            echo 'DOCKER_TAGS_CONFIG<<EOF'
-            echo $(jq '.release.tags_config' -r pyconfig.json)
-            echo EOF
-            echo 'DOCKER_FLAVOR_CONFIG<<EOF'
-            echo $(jq '.release.flavor_config' -r pyconfig.json)
-            echo EOF
-            echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -r pyconfig.json)
+            printf -- "%s\n" 'DOCKER_TAGS_CONFIG<<EOF'
+            printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
+            printf -- "%s\n" EOF
 
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
+            printf -- "%s\n" 'DOCKER_FLAVOR_CONFIG<<EOF'
+            printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json)"
+            printf -- "%s\n" EOF
+            
+            printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
 
-            echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -r pyconfig.json)
-            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -r pyconfig.json)
+            printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
+            printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
+            printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
+            printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
+            printf -- "RELEASE_REPOS=%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
+            printf -- "TEST_ARTIFACT=%s\n" "$(jq '.TEST_ARTIFACT' -j pyconfig.json)"
+            printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
+            printf -- "TEST_ID=%s\n" "$(jq '.TEST_ID' -j pyconfig.json)"
+            printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
 
-            echo RELEASE_REPOS=$(jq '.release.final_repos_config' -r pyconfig.json)
+            # echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -j pyconfig.json)
+            # echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -j pyconfig.json)
+            # echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -j pyconfig.json)
+            # echo DEB_ENABLED=$(jq '.debian.enabled' -j pyconfig.json)
 
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
-            echo TEST_RUNNERS_MATRIX=$(jq '.release.test_runners_matrix' -r pyconfig.json)
+            # echo DOCKER_BASE_IMAGE=$(jq '.release.base_image' -j pyconfig.json)
+            # echo 'DOCKER_TAGS_CONFIG<<EOF'
+            # echo $(jq '.release.tags_config' -j pyconfig.json)
+            # echo EOF
+            # echo 'DOCKER_FLAVOR_CONFIG<<EOF'
+            # echo $(jq '.release.flavor_config' -j pyconfig.json)
+            # echo EOF
+            # echo DOCKER_BUILD_PLATFORMS=$(jq '.release.build_platforms_config' -j pyconfig.json)
+
+            # echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -j pyconfig.json)
+            # echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -j pyconfig.json)
+
+            # echo PRERELEASE_REPO=$(jq '.release.prerelease_repo' -j pyconfig.json)
+            # echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -j pyconfig.json)
+
+            # echo RELEASE_REPOS=$(jq '.release.final_repos_config' -j pyconfig.json)
+
+            # echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -j pyconfig.json)
+            # echo TEST_DATE=$(jq '.build.date' -j pyconfig.json)
+            # echo TEST_ID=$(jq '.TEST_ID' -j pyconfig.json)
+            # echo TEST_RUNNERS_MATRIX=$(jq '.release.test_runners_matrix' -j pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
 
       - name: Upload project settings
@@ -208,9 +234,6 @@ jobs:
           dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
           action: push
 
-  deb_release:
-    uses: ./.github/workflows/deb_release.yml
-    secrets: inherit
 
   deb-build:
     needs: config
@@ -229,11 +252,11 @@ jobs:
     needs:
       - config
       - deb-build
-    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
+      if: github.ref_type == 'tag'
       with:
         pattern: ${{ needs.config.outputs.DEB_ARTIFACTS_PREFIX }}*
         path: ${{ github.workspace }}/artifacts
@@ -241,6 +264,7 @@ jobs:
 
     - name: Create new release
       uses: softprops/action-gh-release@v2
+      if: github.ref_type == 'tag'
       with:
         files: |
           artifacts/*.deb
@@ -248,6 +272,6 @@ jobs:
   summary:
     needs:
       - push
-      - deb_release
+      - deb-publish
     uses: ./.github/workflows/_release_summary.yml
     secrets: inherit
