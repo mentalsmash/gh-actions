@@ -58,7 +58,7 @@ jobs:
         run: |
           (
             echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
       - name: Log in to GitHub
         uses: docker/login-action@v3

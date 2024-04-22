@@ -1,4 +1,4 @@
-name: Image Build (debian-builder)
+name: Docker Build (debian-builder)
 run-name: |
   docker build [debian-builder]
 
@@ -58,7 +58,7 @@ jobs:
             echo DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
             echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r pyconfig.json)
             echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
 
   build:

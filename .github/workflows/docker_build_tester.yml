@@ -1,4 +1,4 @@
-name: Image Build (tester)
+name: Docker Build (tester)
 run-name: |
   docker build [tester]
 
@@ -58,7 +58,7 @@ jobs:
             echo TESTER_IMAGE_BASE_IMAGE_MATRIX=$(jq '.ci.images.tester.base_images_matrix' -r pyconfig.json)
             echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r pyconfig.json)
             echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
   build:
     needs:

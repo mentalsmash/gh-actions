@@ -1,4 +1,4 @@
-name: Image Build (admin)
+name: Docker Build (admin)
 run-name: |
   docker build [admin]
 
@@ -53,7 +53,7 @@ jobs:
             echo ADMIN_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.admin.build_platforms_config' -r pyconfig.json)
             echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)
             echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
       
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master

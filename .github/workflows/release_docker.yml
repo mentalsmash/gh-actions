@@ -1,0 +1,192 @@
+name: Release (Docker Images)
+run-name: |
+  docker release [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+
+concurrency:
+  group: docker-release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  CLONE_DIR: src/repo
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      DOCKER_BASE_IMAGE: ${{ steps.config.outputs.DOCKER_BASE_IMAGE }}
+      DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
+      DOCKER_FLAVOR_CONFIG: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
+      DOCKER_TAGS_CONFIG: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
+      LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
+      LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
+      PRERELEASE_REPO: ${{ steps.config.outputs.PRERELEASE_REPO }}
+      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+      RELEASE_REPOS: ${{ steps.config.outputs.RELEASE_REPOS }}
+      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
+      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+      TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+
+      - name: Configure workflow
+        id: config
+        run: |
+          (
+            printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
+            printf -- "%s\n" "DOCKER_TAGS_CONFIG<<EOF"
+            printf -- "%s\n" "$(jq '.release.tags_config' -j pyconfig.json)"
+            printf -- "%s\n" EOF
+            printf -- "%s\n" "DOCKER_FLAVOR_CONFIG<<EOF"
+            printf -- "%s\n" "$(jq '.release.flavor_config' -j pyconfig.json)"
+            printf -- "%s\n" EOF
+            printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
+            printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
+            printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
+            printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
+            printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
+            printf -- "%s\n" "RELEASE_REPOS<<EOF"
+            printf -- "%s\n" "$(jq '.release.final_repos_config' -j pyconfig.json)"
+            printf -- "%s\n" EOF
+            printf -- "TEST_ARTIFACT=%s\n" "$(jq '.release.test_artifact' -j pyconfig.json)"
+            printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
+            printf -- "TEST_ID=%s\n" "$(jq '.release.test_id' -j pyconfig.json)"
+            printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
+          ) | tee -a ${GITHUB_OUTPUT}
+
+      - name: Upload project settings
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-settings
+          path: pyconfig.json
+
+  build:
+    needs: config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.DOCKER_BASE_IMAGE }}
+          build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+          context: ${{ env.CLONE_DIR }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/Dockerfile
+          image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          image-repos: ${{ needs.config.outputs.PRERELEASE_REPO }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: push
+
+  test:
+    needs:
+      - config
+      - build
+    strategy:
+      matrix:
+        runner: ${{ fromJson(needs.config.outputs.TEST_RUNNERS_MATRIX) }} 
+    runs-on: ${{ fromJson(matrix.runner) }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/test/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: load
+
+      - name: Generate architecture ID
+        id: arch
+        run: |
+          (
+            case "$(uname -m)" in
+              x86_64)
+                echo ARCH=amd64
+                ;;
+              aarch64)
+                echo ARCH=arm64
+                ;;
+            esac
+          ) | tee -a ${GITHUB_OUTPUT}
+      
+      - name: Run tests
+        run: |
+          make -C ${{ env.CLONE_DIR }} test-release
+        env:
+          DEBUG: ${{ runner.debug }}
+          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+          TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}__${{ steps.arch.outputs.ARCH }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}__${{ steps.arch.outputs.ARCH }}
+          path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
+
+  push:
+    needs:
+      - config
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ needs.config.outputs.PRERELEASE_IMAGE }}
+          build-platforms: ${{ needs.config.outputs.DOCKER_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/release/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ needs.config.outputs.RELEASE_REPOS }}
+          image-flavor-config: ${{ needs.config.outputs.DOCKER_FLAVOR_CONFIG }}
+          image-tags-config: ${{ needs.config.outputs.DOCKER_TAGS_CONFIG }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user: ${{ github.actor }}
+          dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+          dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          action: push

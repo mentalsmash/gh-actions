@@ -1,14 +1,35 @@
-name: Release Step (Test Image)
+name: Build'n'Test (Docker Images)
 run-name: |
-  release (test image) [${{github.ref_type == 'branch' && 'nightly' || 'stable'}}, ${{github.ref_name}}]
+  build-n-test docker (${{inputs.base-image}}, ${{inputs.build-platform}}) [${{github.ref_name}}]
 
 on:
   workflow_call:
+    inputs:
+      base-image:
+        type: string
+        required: true
+      build-platform:
+        type: string
+        required: true
 
   workflow_dispatch:
+    inputs:
+      base-image:
+        description: "base OS image"
+        type: string
+        required: true
+      build-platform:
+        description: "build platform"
+        type: string
+        required: true
 
 concurrency:
-  group: release-test-image-${{ github.ref }}
+  group: ci-build-${{ github.ref }}-${{ inputs.build-platform }}-${{ inputs.base-image }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
 
 env:
   CLONE_DIR: src/repo
@@ -17,48 +38,51 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
+      CI_RUNNER: ${{ steps.config.outputs.CI_RUNNER }}
+      LOCAL_TESTER_IMAGE_BASE_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE_BASE_IMAGE }}
       LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
       LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
-      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
       LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
-      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
       TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
       TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
       TEST_ID: ${{ steps.config.outputs.TEST_ID }}
-      TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
         with:
           path: ${{ env.CLONE_DIR }}
           submodules: true
-
+      
       - name: Load configuration
         uses: mentalsmash/actions/pyconfig/configuration@master
         with:
           clone-dir: ${{ env.CLONE_DIR }}
+          workflow: build_and_test_docker
+          inputs: ${{ toJson(inputs) }}
 
       - name: Configure workflow
         id: config
         run: |
           (
-            echo TEST_ID=$(jq '.TEST_ID' -jrpyconfig.json)
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -jrpyconfig.json)
+            echo CI_RUNNER=$(jq '.CI_RUNNER' -r pyconfig.json)
+            echo LOCAL_TESTER_IMAGE_BASE_IMAGE=$(jq '.LOCAL_TESTER_IMAGE_BASE_IMAGE' -r pyconfig.json)
+            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
+            echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
             echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
             echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.release.login_prerel.dockerhub' -r pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.release.login_prerel.github' -r pyconfig.json)
-            echo PRERELEASE_IMAGE=$(jq '.release.prerelease_image' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.tester.login.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.tester.login.github' -r pyconfig.json)
             echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
-            echo TEST_RUNNERS_MATRIXc$(jq '.release.test_runners_matrix' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
-  test:
+      - name: Validate code
+        run: |
+          make -C ${{ env.CLONE_DIR }} code-check
+
+  build-n-test:
     needs: config
-    strategy:
-      matrix:
-        runner: ${{ fromJson(needs.config.outputs.TEST_RUNNERS_MATRIX) }} 
-    runs-on: ${{ fromJson(matrix.runner) }}
+    runs-on: ${{ fromJson(needs.config.outputs.CI_RUNNER) }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -69,6 +93,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+        # Assumption: CI_TAG is private/internal and requires login
+        # either on GitHub or DockerHub
       - name: Log in to GitHub
         if: needs.config.outputs.LOGIN_GITHUB
         uses: docker/login-action@v3
@@ -76,60 +102,40 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Log in to Docker Hub
+
+      - name: Log in to Docker HUb
         if: needs.config.outputs.LOGIN_DOCKERHUB
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Determine runner platform
-        id: platform
-        run: |
-          case "$(uname -m)" in
-            x86_64)
-              arch=amd64
-              platform=linux/amd64
-              ;;
-            aarch64)
-              arch=arm64
-              platform=linux/arm64
-              ;;
-            *)
-              echo "unsupported platform: $(uname -m)"
-              ;;
-          esac
-          (
-            echo ARCH=${arch}
-            echo PLATFORM=${platform}
-          ) >> ${GITHUB_OUTPUT}
-
-
       - name: Build tester image
         uses: docker/build-push-action@v5
         with:
-          file: ${{ env.CLONE_DIR }}/docker/test/Dockerfile
+          file: ${{env.CLONE_DIR}}/docker/Dockerfile
           tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
           load: true
-          context: ${{ env.CLONE_DIR }}
-          platforms: ${{ steps.platform.outputs.PLATFORM }}
+          context: ${{env.CLONE_DIR}}
+          platforms: ${{ inputs.build-platform }}
           build-args: |
-            BASE_IMAGE=${{ needs.config.outputs.PRERELEASE_IMAGE }}
-    
+            TEST=y
+            BASE_IMAGE=${{ needs.config.outputs.LOCAL_TESTER_IMAGE_BASE_IMAGE }}
+
       - name: Run tests
         run: |
-          make -C ${{ env.CLONE_DIR }} test-release
+          make -C ${{ env.CLONE_DIR }} test-ci
         env:
           DEBUG: ${{ runner.debug }}
-          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
-          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
           TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
-          TEST_ID: ${{ needs.config.outputs.TEST_ID }}__${{ steps.platform.outputs.ARCH }}
+          TEST_ID: ${{ needs.config.outputs.TEST_ID }}
+          LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+          LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ needs.config.outputs.TEST_ARTIFACT }}__${{ steps.platform.outputs.ARCH }}
+          name: ${{ needs.config.outputs.TEST_ARTIFACT }}
           path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
+

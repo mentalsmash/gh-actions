@@ -1,6 +1,6 @@
-name: Deb Release (Build & Test)
+name: Build'n'Test (Debian Packages)
 run-name: |
-  deb release (build & test) [${{github.ref_name}}]
+  build-n-test deb ((${{inputs.base-image}}, ${{inputs.build-architecture}})) [${{github.ref_name}}]
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
         uses: mentalsmash/actions/pyconfig/configuration@master
         with:
           clone-dir: ${{ env.CLONE_DIR }}
-          workflow: deb_build
+          workflow: build_and_test_deb
           inputs: ${{ toJson(inputs) }}
 
       - name: Configure workflow
@@ -78,7 +78,7 @@ jobs:
             echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r pyconfig.json)
             echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r pyconfig.json)
             echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
 
   build-packages:

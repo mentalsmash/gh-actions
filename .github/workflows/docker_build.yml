@@ -1,5 +1,5 @@
-name: Setup CI
-run-name: periodic infrastructure setup
+name: Docker Build (Periodict Trigger)
+run-name: docker build [periodic trigger]
 
 on:
   workflow_dispatch:
@@ -17,13 +17,13 @@ permissions:
 
 jobs:
   build-image-debian-builder:
-    uses: ./.github/workflows/image_build_debian_builder.yml
+    uses: ./.github/workflows/docker_build_debian_builder.yml
     secrets: inherit
 
   build-image-ci-tester:
-    uses: ./.github/workflows/image_build_tester.yml
+    uses: ./.github/workflows/docker_build_tester.yml
     secrets: inherit
 
   build-image-admin:
-    uses: ./.github/workflows/image_build_admin.yml
+    uses: ./.github/workflows/docker_build_admin.yml
     secrets: inherit

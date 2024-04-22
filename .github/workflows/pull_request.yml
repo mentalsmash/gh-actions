@@ -31,7 +31,7 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
-  check-trigger:
+  config:
     runs-on: ubuntu-latest
     outputs:
       BASIC_VALIDATION_BUILD_PLATFORMS: ${{ steps.config.outputs.BASIC_VALIDATION_BUILD_PLATFORMS }}
@@ -71,46 +71,46 @@ jobs:
             VALIDATE_BASIC=$(jq '.VALIDATE_BASIC' -r pyconfig.json)
             VALIDATE_DEB=$(jq '.VALIDATE_DEB' -r pyconfig.json)
             VALIDATE_FULL=$(jq '.VALIDATE_FULL' -r pyconfig.json)
-          ) >> ${GITHUB_OUTPUT}
+          ) | tee -a ${GITHUB_OUTPUT}
 
   basic-validation:
-    needs: check-trigger
-    if: ${{ needs.check-trigger.outputs.VALIDATE_BASIC }}
+    needs: config
+    if: ${{ needs.config.outputs.VALIDATE_BASIC }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BUILD_PLATFORMS) }}
-        base-image: ${{ fromJson(needs.check-trigger.outputs.BASIC_VALIDATION_BASE_IMAGES) }}
-    uses: ./.github/workflows/_ci_build.yml
+        build-platform: ${{ fromJson(needs.config.outputs.BASIC_VALIDATION_BUILD_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.config.outputs.BASIC_VALIDATION_BASE_IMAGES) }}
+    uses: ./.github/workflows/build_and_test_docker.yml
     secrets: inherit
     with:
       build-platform: ${{matrix.build-platform}}
       base-image: ${{matrix.base-image}}
 
   full-validation:
-    needs: check-trigger
-    if: ${{ needs.check-trigger.outputs.VALIDATE_FULL }}
+    needs: config
+    if: ${{ needs.config.outputs.VALIDATE_FULL }}
     strategy:
       matrix:
-        build-platform: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BUILD_PLATFORMS) }}
-        base-image: ${{ fromJson(needs.check-trigger.outputs.FULL_VALIDATION_BASE_IMAGES) }}
+        build-platform: ${{ fromJson(needs.config.outputs.FULL_VALIDATION_BUILD_PLATFORMS) }}
+        base-image: ${{ fromJson(needs.config.outputs.FULL_VALIDATION_BASE_IMAGES) }}
         # [IMPLEMENTME] These values are "hard-coded" and must be updated manually here
         exclude:
           - build-platform: amd64
             base-image: "ubuntu:22.04"
-    uses: ./.github/workflows/_ci_build.yml
+    uses: ./.github/workflows/build_and_test_docker.yml
     secrets: inherit
     with:
       build-platform: ${{matrix.build-platform}}
       base-image: ${{matrix.base-image}}
 
   deb-validation:
-    needs: check-trigger
-    if: ${{ needs.check-trigger.outputs.VALIDATE_DEB }}
+    needs: config
+    if: ${{ needs.config.outputs.VALIDATE_DEB }}
     strategy:
       matrix:
-        build-architecture: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BUILD_ARCHITECTURES) }}
-        base-image: ${{ fromJson(needs.check-trigger.outputs.DEB_VALIDATION_BASE_IMAGES) }}
-    uses: ./.github/workflows/_deb_build.yml
+        build-architecture: ${{ fromJson(needs.config.outputs.DEB_VALIDATION_BUILD_ARCHITECTURES) }}
+        base-image: ${{ fromJson(needs.config.outputs.DEB_VALIDATION_BASE_IMAGES) }}
+    uses: ./.github/workflows/build_and_test_deb.yml
     secrets: inherit
     with:
       base-image: ${{ matrix.base-image }}
