@@ -679,11 +679,12 @@ class PackageVersion(NamedTuple):
       log.command(delete_cmd, check=True)
       subprocess.run(delete_cmd, check=True)
 
+    package_label = package if not org else f"{org}/{package}"
     deleted = []
     if prompt is None:
       prompt = "version to delete"
 
-    for version in cls.select(
+    to_be_deleted = cls.select(
       package=package,
       org=org,
       filter=filter,
@@ -691,11 +692,18 @@ class PackageVersion(NamedTuple):
       prompt=prompt,
       noninteractive=noninteractive,
       versions=versions,
-    ):
+    )
+    if not filter:
+      # If we have an empty filter, we must spare the most recent, tagged version
+      latest = next((version for version in reversed(to_be_deleted) if version.tags), None)
+      if latest:
+        log.warning("[{}] preserving most recently tagged version: {}", package_label, latest)
+        to_be_deleted.remove(latest)
+
+    for version in to_be_deleted:
       if not noop:
         _delete_version(version)
       deleted.append(version)
-    package_label = package if not org else f"{org}/{package}"
     if noop:
       log.warning(
         "[{}] {} version selected but not actually deleted",
