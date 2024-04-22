@@ -46,16 +46,11 @@ jobs:
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"
-        run: |
-          docker run --rm \
-            -v $(pwd):/workspace \
-            -e GH_TOKEN=${GH_TOKEN} \
-            -w /workspace \
-            ${{steps.config.outputs.ADMIN_IMAGE}} \
-            ${{ env.CLONE_DIR }}/scripts/ci-admin \
-              -c ${{ github.run_id }} \
-              nightly-cleanup \
-              -r ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+        uses: mentalsmash/actions/ci/admin@master
+        with:
+          image: ${{ steps.config.outputs.ADMIN_IMAGE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: |
+            -c ${{ github.run_id }}
+            nightly-cleanup
+            -r ${{ github.repository }}

@@ -67,19 +67,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Clean up workflow runs"
-        run: |
-          docker run --rm \
-            -v $(pwd):/workspace \
-            -e GH_TOKEN=${GH_TOKEN} \
-            -w /workspace \
-            ${{steps.config.outputs.ADMIN_IMAGE}} \
-            ${{ env.CLONE_DIR }}/scripts/ci-admin \
-              -c ${{ github.run_id }} \
-              pr-closed \
-              -r ${{ github.repository }} \
-              -N ${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr-number }} \
-              ${{ (github.event_name == 'pull_request' && github.event.pull_request.merged || inputs.pr-merged) && '-m' || '' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "Clean up workflow runs for PR"
+        uses: mentalsmash/actions/ci/admin@master
+        with:
+          image: ${{ steps.config.outputs.ADMIN_IMAGE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: |
+            -c ${{ github.run_id }}
+            pr-closed
+            -r ${{ github.repository }}
+            -N ${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr-number }}
+            ${{ (github.event_name == 'pull_request' && github.event.pull_request.merged || inputs.pr-merged) && '-m' || '' }}
 

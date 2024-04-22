@@ -97,33 +97,16 @@ jobs:
 
       - name: Delete all versions of the prerelease package
         if: needs.config.outputs.PRERELEASE_PACKAGE
-        run: |
-          echo ::add-mask::${GH_TOKEN}
-
-          package_exists=$(docker run --rm \
-            -v $(pwd):/workspace \
-            -e GH_TOKEN=${GH_TOKEN} \
-            -w /workspace \
-            ${{ needs.config.outputs.ADMIN_IMAGE }} \
-            ${{ env.CLONE_DIR }}/scripts/ci-admin \
-            select-packages \
-            -o ${{ needs.config.outputs.PRERELEASE_PACKAGE_ORG }} \
-            -f "'${{ github.repository }} '${{ needs.config.outputs.PRERELEASE_PACKAGE }}")
-        
-          if [ -n "${package_exists}" ]; then
-            docker run --rm \
-              -v $(pwd):/workspace \
-              -e GH_TOKEN=${GH_TOKEN} \
-              -w /workspace \
-              ${{ needs.config.outputs.ADMIN_IMAGE }} \
-              ${{ env.CLONE_DIR }}/scripts/ci-admin \
-                -c ${{ github.run_id }} \
-                delete-versions \
-                -o ${{ needs.config.outputs.PRERELEASE_PACKAGE_ORG }} \
-                -p ${{ needs.config.outputs.PRERELEASE_PACKAGE }}
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.PACKAGE_VERSIONS_PAT }}
+        uses: mentalsmash/actions/ci/admin@master
+        with:
+          image: ${{ needs.config.outputs.ADMIN_IMAGE }}
+          token: ${{ secrets.PACKAGE_VERSIONS_PAT }}
+          args: |
+            -c ${{ github.run_id }}
+            delete-versions
+            -o ${{ needs.config.outputs.PRERELEASE_PACKAGE_ORG }}
+            -p ${{ needs.config.outputs.PRERELEASE_PACKAGE }}
+            --if-package-exists
 
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master
