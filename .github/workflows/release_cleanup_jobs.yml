@@ -1,4 +1,4 @@
-name: Release (Cleanup Jobs)
+name: Release (Cleanup - Jobs)
 run-name: |
   release cleanup (jobs) [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 

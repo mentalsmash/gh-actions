@@ -1,4 +1,4 @@
-name: Release (Cleanup Prerelease)
+name: Release (Cleanup - Prerelease)
 run-name: |
   release cleanup (prerelease) [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 

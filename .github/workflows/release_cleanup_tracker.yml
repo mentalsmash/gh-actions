@@ -1,4 +1,4 @@
-name: Release Tracker (Cleanup)
+name: Release (Cleanup - Tracker)
 run-name: |
   release tracker cleanup [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 
@@ -94,7 +94,7 @@ jobs:
 
       - name: Delete pruned versions
         uses: mentalsmash/actions/release-tracker/delete@master
-        if: steps.config.outputs.GH_PACKAGE
+        if: steps.config.outputs.GH_PACKAGE && steps.layers.outputs.versions
         with:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           track: ${{ steps.config.outputs.BUILD_PROFILE }}
