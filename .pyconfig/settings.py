@@ -173,7 +173,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "artifact": build_settings_artifact,
       },
       "version": build_version,
-      "artifacts_dir": artifacts_dir,
+      "artifacts_dir": str(artifacts_dir),
     },
     ###########################################################################
     # CI config
