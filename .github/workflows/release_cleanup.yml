@@ -1,6 +1,6 @@
-name: Release (Cleanup - Tracker)
+name: Release (Cleanup)
 run-name: |
-  release tracker cleanup [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
+  release (cleanup) [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
   workflow_call:
 
 concurrency:
-  group: release-tracker
+  group: release-cleanup
   cancel-in-progress: false
 
 permissions:
@@ -38,20 +38,26 @@ jobs:
         run: |
           (
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
-            printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
-            printf -- "BUILD_VERSION=%s\n" "$(jq '.build.version' -r pyconfig.json)"
-            printf -- "GH_ORG=%s\n" "$(jq '.release.gh.org' -r pyconfig.json)"
-            printf -- "GH_PACKAGE=%s\n" "$(jq '.release.gh.package' -r pyconfig.json)"
-            echo "RELEASE_FINAL_IMAGES<<EOF"
-            jq '.release.final_images_config' -r pyconfig.json
-            echo
-            echo EOF
-            printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
-            printf -- "TRACKER_USER_EMAIL=%s\n" "$(jq '.release.tracker.user.email' -r pyconfig.json)"
-            printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
             printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
             printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
+
+      - name: "Clean up workflow runs"
+        uses: mentalsmash/actions/ci/admin@master
+        with:
+          image: ${{ steps.config.outputs.ADMIN_IMAGE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+          args: |
+            -c
+            ${{ github.run_id }}
+            nightly-cleanup
+            -r
+            ${{ github.repository }}
+
 
       - name: Clone release tracker
         uses: mentalsmash/actions/release-tracker/checkout@master
@@ -105,4 +111,3 @@ jobs:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           track: ${{ steps.config.outputs.BUILD_PROFILE }}
           entries: ${{ steps.layers.outputs.versions }}
-
