@@ -135,7 +135,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
     repo_org,
     [
       cfg.ci.images.admin.image,
-      cfg.ci.images.admin.base_image,
     ],
   )
 
