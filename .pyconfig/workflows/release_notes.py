@@ -46,7 +46,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   reltracker_commit = reltracker_commit_f.read_text()
   # Read list of generated images from the release-tracker's summary
   reltracker_summary_f = Path(f"{cfg.build.artifacts_dir}/release-tracker-summary.json")
-  reltracker_summary = json.loads(reltracker_summary_f)
+  reltracker_summary = json.loads(reltracker_summary_f.read_text())
   release_docker_manifest_f_rel = Path(
     f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_summary['entry']}"
   )
