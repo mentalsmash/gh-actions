@@ -11,7 +11,8 @@ on:
     branches: [master]
 
 concurrency:
-  group: release-cleanup-${{ github.ref }}
+  # group: release-cleanup-${{ github.ref }}
+  group: docker-release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}
   cancel-in-progress: false
 
 permissions:
@@ -110,3 +111,9 @@ jobs:
             -P
             /workspace/prunable_layers.log
 
+      # - name: Delete pruned versions
+      #   uses: mentalsmash/actions/release-tracker/prune-docker@master
+      #   if: steps.config.outputs.GH_PACKAGE
+      #   with:
+      #     repository: ${{ steps.config.outputs.TRACKER_REPO }}
+      #     track: ${{ steps.config.outputs.BUILD_PROFILE }}

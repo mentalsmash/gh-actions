@@ -13,6 +13,7 @@ RUN set -ex; \
       python3 \
       python3-termcolor \
       python3-tabulate \
+      python3-yaml \
       bsdextrautils;  \
     locale-gen en_US en_US.UTF-8; \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8; \
