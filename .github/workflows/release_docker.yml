@@ -22,12 +22,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
-      LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
-      PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
-      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
-      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
-      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
       TEST_RUNNERS_MATRIX: ${{ steps.config.outputs.TEST_RUNNERS_MATRIX }}
     steps:
       - name: Clone source repository
@@ -58,13 +52,7 @@ jobs:
             echo
             printf -- "%s\n" EOF
             printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
-            printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
-            printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
             printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
-            printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
-            printf -- "TEST_ARTIFACT=%s\n" "$(jq '.release.test_artifact' -j pyconfig.json)"
-            printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
-            printf -- "TEST_ID=%s\n" "$(jq '.release.test_id' -j pyconfig.json)"
             printf -- "TEST_RUNNERS_MATRIX=%s\n" "$(jq '.release.test_runners_matrix' -j pyconfig.json)"
 
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
@@ -130,13 +118,30 @@ jobs:
           path: ${{ env.CLONE_DIR }}
           submodules: true
       
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+
+      - name: Configure workflow
+        id: config
+        run: |
+          (
+            printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
+            printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
+            printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
+            printf -- "TEST_ARTIFACT=%s\n" "$(jq '.release.test_artifact' -j pyconfig.json)"
+            printf -- "TEST_DATE=%s\n" "$(jq '.build.date' -j pyconfig.json)"
+            printf -- "TEST_ID=%s\n" "$(jq '.release.test_id' -j pyconfig.json)"
+          ) | tee -a ${GITHUB_OUTPUT}
+      
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master
         with:
-          base-image: ${{ needs.build.outputs.PRERELEASE_IMAGE }}
+          base-image: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
           dockerfile: ${{ env.CLONE_DIR }}/docker/test/Dockerfile
           context: ${{ env.CLONE_DIR }}
-          image-tags: ${{ needs.build.outputs.LOCAL_TESTER_IMAGE }}
+          image-tags: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           github-user: ${{ github.actor }}
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -162,14 +167,14 @@ jobs:
           make -C ${{ env.CLONE_DIR }} test-release
         env:
           DEBUG: ${{ runner.debug }}
-          LOCAL_TESTER_IMAGE: ${{ needs.build.outputs.LOCAL_TESTER_IMAGE }}
-          LOCAL_TESTER_RESULTS: ${{ needs.build.outputs.LOCAL_TESTER_RESULTS }}
-          TEST_DATE: ${{ needs.build.outputs.TEST_DATE }}
-          TEST_ID: ${{ needs.build.outputs.TEST_ID }}__${{ steps.arch.outputs.ARCH }}
+          LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
+          LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
+          TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+          TEST_ID: ${{ steps.config.outputs.TEST_ID }}__${{ steps.arch.outputs.ARCH }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ needs.build.outputs.TEST_ARTIFACT }}__${{ steps.arch.outputs.ARCH }}
-          path: ${{ env.CLONE_DIR }}/${{ needs.build.outputs.LOCAL_TESTER_RESULTS }}/**
+          name: ${{ steps.config.outputs.TEST_ARTIFACT }}__${{ steps.arch.outputs.ARCH }}
+          path: ${{ env.CLONE_DIR }}/${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}/**

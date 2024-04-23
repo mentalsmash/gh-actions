@@ -38,8 +38,19 @@ jobs:
         run: |
           (
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
+
+            printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
+
             printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
             printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
+
+            echo GH_ORG=$(jq '.release.gh.org' -r pyconfig.json)
+            echo GH_PACKAGE=$(jq '.release.gh.package' -r pyconfig.json)
+
+            echo TRACKER_USER_NAME=$(jq '.release.tracker.user.name' -r pyconfig.json)
+            echo TRACKER_USER_EMAIL=$(jq '.release.tracker.user.email' -r pyconfig.json)
+            echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
+
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"

@@ -38,17 +38,7 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      DEB_ARTIFACT: ${{ steps.config.outputs.DEB_ARTIFACT }}
-      DEB_BUILDER: ${{ steps.config.outputs.DEB_BUILDER }}
-      DEB_DIST_DIR: ${{ steps.config.outputs.DEB_DIST_DIR }}
       DEB_RUNNER: ${{ steps.config.outputs.DEB_RUNNER }}
-      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
-      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
-      LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
-      LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
-      TEST_ARTIFACT: ${{ steps.config.outputs.TEST_ARTIFACT }}
-      TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
-      TEST_ID: ${{ steps.config.outputs.TEST_ID }}
     steps:
       - name: Clone source repository
         uses: actions/checkout@v4
@@ -67,17 +57,7 @@ jobs:
         id: config
         run: |
           (
-            echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -r pyconfig.json)
-            echo DEB_BUILDER=$(jq '.DEB_BUILDER' -r pyconfig.json)
             echo DEB_RUNNER=$(jq '.DEB_RUNNER' -r pyconfig.json)
-            echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
-            echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
-            echo DEB_DIST_DIR=$(jq '.debian.artifacts.dist_dir' -r pyconfig.json)
-            echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
-            echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
-            echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r pyconfig.json)
-            echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r pyconfig.json)
-            echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
           ) | tee -a ${GITHUB_OUTPUT}
 
 
@@ -91,26 +71,58 @@ jobs:
         path: ${{ env.CLONE_DIR }}
         submodules: true
 
+    - name: Load configuration
+      uses: mentalsmash/actions/pyconfig/configuration@master
+      with:
+        clone-dir: ${{ env.CLONE_DIR }}
+        workflow: build_and_test_deb
+        inputs: ${{ toJson(inputs) }}
+
+    - name: Configure workflow
+      id: config
+      run: |
+        (
+          echo DEB_ARTIFACT=$(jq '.DEB_ARTIFACT' -r pyconfig.json)
+          echo DEB_BUILDER=$(jq '.DEB_BUILDER' -r pyconfig.json)
+          echo DEB_RUNNER=$(jq '.DEB_RUNNER' -r pyconfig.json)
+          echo DEB_DIST_DIR=$(jq '.debian.artifacts.dist_dir' -r pyconfig.json)
+          echo LOCAL_TESTER_IMAGE=$(jq '.ci.images.local_tester.image' -r pyconfig.json)
+          echo LOCAL_TESTER_RESULTS=$(jq '.ci.test.results_dir' -r pyconfig.json)
+          echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r pyconfig.json)
+          echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r pyconfig.json)
+          echo TEST_ARTIFACT=$(jq '.TEST_ARTIFACT' -r pyconfig.json)
+          echo TEST_ID=$(jq '.TEST_ID' -r pyconfig.json)
+          echo TEST_DATE=$(jq '.build.date' -r pyconfig.json)
+        ) | tee -a ${GITHUB_OUTPUT}
+
     - name: Log in to GitHub
       uses: docker/login-action@v3
+      if: steps.config.outputs.LOGIN_GITHUB
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Log in to DockerHub
+      uses: docker/login-action@v3
+      if: steps.config.outputs.LOGIN_DOCKERHUB
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build debian packages
       run: |
         make -C ${{ env.CLONE_DIR }} changelog
         make -C ${{ env.CLONE_DIR }} debuild
       env:
-        DEB_BUILDER: ${{ needs.config.outputs.DEB_BUILDER }}
-        DEB_DIST_DIR: ${{ needs.config.outputs.DEB_DIST_DIR }}
+        DEB_BUILDER: ${{ steps.config.outputs.DEB_BUILDER }}
+        DEB_DIST_DIR: ${{ steps.config.outputs.DEB_DIST_DIR }}
   
     - name: Upload debian packages
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ needs.config.outputs.DEB_ARTIFACT }}
-        path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.DEB_DIST_DIR }}/*
+        name: ${{ steps.config.outputs.DEB_ARTIFACT }}
+        path: ${{ env.CLONE_DIR }}/${{ steps.config.outputs.DEB_DIST_DIR }}/*
 
     - name: Fix permissions
       run: |
@@ -120,49 +132,11 @@ jobs:
           chown -Rv $(id -u):$(id -g) /repo
       if: always()
 
-  test:
-    needs:
-      - config
-      - build
-    runs-on: ${{ fromJson(needs.config.outputs.DEB_RUNNER) }}
-    steps:
-    - name: Clone source repository
-      uses: actions/checkout@v4
-      with:
-        path: ${{ env.CLONE_DIR }}
-        submodules: true
-
-    - name: Download debian packages artifact
-      uses: actions/download-artifact@v4
-      with:
-        pattern: ${{ needs.config.outputs.DEB_ARTIFACT }}
-
-    - name: Move artifacts in place
-      run: |
-        mkdir -p ${{ env.CLONE_DIR}}/${{ needs.config.outputs.DEB_DIST_DIR }}
-        mv -v ${{ needs.config.outputs.DEB_ARTIFACT }}/* \
-          ${{ env.CLONE_DIR}}/${{ needs.config.outputs.DEB_DIST_DIR }}/
-
-    - name: Log in to GitHub
-      uses: docker/login-action@v3
-      if: needs.config.outputs.LOGIN_GITHUB
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Log in to DockerHub
-      uses: docker/login-action@v3
-      if: needs.config.outputs.LOGIN_DOCKERHUB
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
     - name: Build tester image
       uses: docker/build-push-action@v5
       with:
         file: ${{ env.CLONE_DIR }}/docker/debian-tester/Dockerfile
-        tags: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
+        tags: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
         load: true
         context: ${{ env.CLONE_DIR }}
         build-args: |
@@ -173,16 +147,16 @@ jobs:
         make -C ${{ env.CLONE_DIR}} test-deb
       env:
         DEBUG: ${{ runner.debug }}
-        TEST_DATE: ${{ needs.config.outputs.TEST_DATE }}
-        TEST_ID: ${{ needs.config.outputs.TEST_ID }}
-        LOCAL_TESTER_IMAGE: ${{ needs.config.outputs.LOCAL_TESTER_IMAGE }}
-        LOCAL_TESTER_RESULTS: ${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}
+        TEST_DATE: ${{ steps.config.outputs.TEST_DATE }}
+        TEST_ID: ${{ steps.config.outputs.TEST_ID }}
+        LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
+        LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
 
     # Always collect and upload available test results
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ needs.config.outputs.TEST_ARTIFACT }}
-        path: ${{ env.CLONE_DIR }}/${{ needs.config.outputs.LOCAL_TESTER_RESULTS }}/**
+        name: ${{ steps.config.outputs.TEST_ARTIFACT }}
+        path: ${{ env.CLONE_DIR }}/${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}/**
       if: always()
 
