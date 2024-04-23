@@ -24,8 +24,8 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
   deb_builder_tag = inputs.base_image.replace(":", "-").replace("/", "-")
   repo = github.repository.split("/")[-1]
   test_id = f"deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.build.version}"
-  test_artifact = f"{repo}-debtest-{test_id}__{cfg.build.date}"
-  deb_artifact = f"{repo}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.build.version}__{cfg.build.date}"
+  test_artifact = f"{repo}-debtest-{test_id}"
+  deb_artifact = f"{repo}-deb-{deb_builder_tag}-{inputs.build_architecture}__{cfg.build.version}"
 
   return {
     "DEB_ARTIFACT": deb_artifact,

@@ -27,7 +27,7 @@ def configure(clone_dir: Path, cfg: NamedTuple, github: NamedTuple, inputs: Name
   tester_image = f"{cfg.ci.images.tester.repo}:{base_image_tag}"
 
   test_id = f"ci-{build_platform_label}__{cfg.build.version}"
-  test_artifact = f"{repo}-test-{test_id}__{cfg.build.date}"
+  test_artifact = f"{repo}-test-{test_id}"
 
   return {
     "CI_RUNNER": runner,
