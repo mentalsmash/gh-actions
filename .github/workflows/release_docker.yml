@@ -88,8 +88,8 @@ jobs:
             echo
             printf -- "%s\n" EOF
             echo "RELEASE_FINAL_IMAGES<<EOF"
-            # printf -- "%s\n" "$(jq '.release.final_images' -r pyconfig.json)"
-            jq '.release.final_images' -r pyconfig.json
+            # printf -- "%s\n" "$(jq '.release.final_images_config' -r pyconfig.json)"
+            jq '.release.final_images_config' -r pyconfig.json
             echo
             echo EOF
             printf -- "TEST_ARTIFACT=%s\n" "$(jq '.release.test_artifact' -j pyconfig.json)"

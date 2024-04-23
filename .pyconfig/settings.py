@@ -86,6 +86,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   )
 
   final_repos_config = "\n".join(cfg.release.final_repos)
+  final_images_config = "\n".join(release_images)
 
   release_test_runners_matrix = json.dumps(
     [
@@ -226,6 +227,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "prerelease_repo": prerel_repo,
         "final_repos_config": final_repos_config,
         "final_images": release_images,
+        "final_images_config": final_images_config,
         "login": {
           "dockerhub": "dockerhub" in release_registries,
           "github": "github" in release_registries,
