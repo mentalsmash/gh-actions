@@ -42,12 +42,32 @@ jobs:
           echo BADGE_VERSION_GIST=$(jq '.release.badge.version.gist' -r pyconfig.json)
           echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -r pyconfig.json)
           echo DEB_ARTIFACTS_PREFIX=$(jq '.debian.artifacts.prefix' -r pyconfig.json)
+          echo TRACKER_ARTIFACT=$(jq '.release.tracker.artifact' -r pyconfig.json)
+          echo TRACKER_USER_NAME=$(jq '.release.tracker.user.name' -r pyconfig.json)
+          echo TRACKER_USER_EMAIL=$(jq '.release.tracker.user.email' -r pyconfig.json)
+          echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
         ) | tee -a ${GITHUB_OUTPUT}
 
-    - name: Download all artifacts
+    - name: Clone release tracker
+      uses: mentalsmash/actions/release-tracker/checkout@master
+      if: steps.config.outputs.GH_PACKAGE
+      with:
+        repository: ${{ steps.config.outputs.TRACKER_REPO }}
+        user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
+        user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
+        token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
+
+    - name: Download Debian artifacts
       uses: actions/download-artifact@v4
       with:
         pattern: ${{ steps.config.outputs.DEB_ARTIFACTS_PREFIX }}*
+        path: ${{ github.workspace }}/artifacts
+        merge-multiple: true
+    
+    - name: Download Release Tracker artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ steps.config.outputs.TRACKER_ARTIFACT }}*
         path: ${{ github.workspace }}/artifacts
         merge-multiple: true
     

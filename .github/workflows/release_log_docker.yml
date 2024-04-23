@@ -45,6 +45,7 @@ jobs:
             printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
             printf -- "TRACKER_USER_EMAIL=%s\n" "$(jq '.release.tracker.user.email' -r pyconfig.json)"
             printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
+            printf -- "TRACKER_ARTIFACT=%s\n" "$(jq '.release.tracker.artifact' -r pyconfig.json)"
             echo "RELEASE_FINAL_IMAGES<<EOF"
             # printf -- "%s\n" "$(jq '.release.final_images_config' -r pyconfig.json)"
             jq '.release.final_images_config' -r pyconfig.json
@@ -72,11 +73,11 @@ jobs:
 
       - name: Read commit hash
         run: |
-          echo TRACKER_COMMIT=$(cd src/tracker && git rev-parse --short HEAD) >> release-tracker.commit
+          echo $(cd src/tracker && git rev-parse --short HEAD) >> release-tracker.commit
       
       - name: Upload summary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-tracker-${{ steps.config.outputs.BUILD_DATE }}
+          name: ${{ steps.config.outputs.TRACKER_ARTIFACT }}
           path: release-tracker*
         if: always()
