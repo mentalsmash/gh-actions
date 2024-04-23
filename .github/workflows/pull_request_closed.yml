@@ -58,21 +58,19 @@ jobs:
         run: |
           (
             echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -r pyconfig.json)
           ) | tee -a ${GITHUB_OUTPUT}
-
-      - name: Log in to GitHub
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: "Clean up workflow runs for PR"
         uses: mentalsmash/actions/ci/admin@master
         with:
           image: ${{ steps.config.outputs.ADMIN_IMAGE }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
           args: |
             -c
             ${{ github.run_id }}

@@ -22,15 +22,12 @@ jobs:
   config:
     runs-on: ubuntu-latest
     outputs:
-      ADMIN_IMAGE: ${{ steps.config.outputs.ADMIN_IMAGE }}
       DOCKER_BASE_IMAGE: ${{ steps.config.outputs.DOCKER_BASE_IMAGE }}
       DOCKER_BUILD_PLATFORMS: ${{ steps.config.outputs.DOCKER_BUILD_PLATFORMS }}
       DOCKER_FLAVOR_CONFIG: ${{ steps.config.outputs.DOCKER_FLAVOR_CONFIG }}
       DOCKER_TAGS_CONFIG: ${{ steps.config.outputs.DOCKER_TAGS_CONFIG }}
       LOCAL_TESTER_IMAGE: ${{ steps.config.outputs.LOCAL_TESTER_IMAGE }}
       LOCAL_TESTER_RESULTS: ${{ steps.config.outputs.LOCAL_TESTER_RESULTS }}
-      PRERELEASE_PACKAGE: ${{ steps.config.outputs.PRERELEASE_PACKAGE }}
-      PRERELEASE_PACKAGE_ORG: ${{ steps.config.outputs.PRERELEASE_PACKAGE_ORG }}
       PRERELEASE_REPO: ${{ steps.config.outputs.PRERELEASE_REPO }}
       PRERELEASE_IMAGE: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
       RELEASE_REPOS: ${{ steps.config.outputs.RELEASE_REPOS }}
@@ -54,7 +51,6 @@ jobs:
         id: config
         run: |
           (
-            printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
             printf -- "BUILD_SETTINGS_ARTIFACT=%s\n" "$(jq '.build.settings.artifact' -j pyconfig.json)"
             printf -- "DOCKER_BASE_IMAGE=%s\n" "$(jq '.release.base_image' -j pyconfig.json)"
             printf -- "%s\n" "DOCKER_TAGS_CONFIG<<EOF"
@@ -70,8 +66,6 @@ jobs:
             printf -- "DOCKER_BUILD_PLATFORMS=%s\n" "$(jq '.release.build_platforms_config' -j pyconfig.json)"
             printf -- "LOCAL_TESTER_IMAGE=%s\n" "$(jq '.ci.images.local_tester.image' -j pyconfig.json)"
             printf -- "LOCAL_TESTER_RESULTS=%s\n" "$(jq '.ci.test.results_dir' -j pyconfig.json)"
-            printf -- "PRERELEASE_PACKAGE=%s\n" "$(jq '.release.prerelease_package' -j pyconfig.json)"
-            printf -- "PRERELEASE_PACKAGE_ORG=%s\n" "$(jq '.release.prerelease_package_org' -j pyconfig.json)"
             printf -- "PRERELEASE_REPO=%s\n" "$(jq '.release.prerelease_repo' -j pyconfig.json)"
             printf -- "PRERELEASE_IMAGE=%s\n" "$(jq '.release.prerelease_image' -j pyconfig.json)"
             printf -- "%s\n" "RELEASE_REPOS<<EOF"

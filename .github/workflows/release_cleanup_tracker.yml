@@ -49,6 +49,8 @@ jobs:
             printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
             printf -- "TRACKER_USER_EMAIL=%s\n" "$(jq '.release.tracker.user.email' -r pyconfig.json)"
             printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
+            printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
+            printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: Clone release tracker
@@ -81,6 +83,10 @@ jobs:
         with:
           image: ${{ steps.config.outputs.ADMIN_IMAGE }}
           token: ${{ secrets.PACKAGE_VERSIONS_PAT }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
           args: |
             -c
             ${{ github.run_id }}

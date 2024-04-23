@@ -5,10 +5,7 @@ ci:
   images:
     # Docker image with administration tools
     admin:
-      build_platforms:
-      - linux/amd64
-      base_image: ubuntu:22.04  
-      image: ghcr.io/mentalsmash/ref-project-debdocker-admin:latest
+      image: ghcr.io/mentalsmash/ci-admin:latest
     # Base Docker image for tester images used by PR tests.
     # The image will be generated for every base image used by the release images.
     tester:
@@ -37,7 +34,7 @@ debian:
     - arm64
     base_images:
     - ubuntu:22.04
-    repo: ghcr.io/mentalsmash/ref-project-debdocker-debian-builder
+    repo: ghcr.io/mentalsmash/debian-builder
 
 #############################################################################
 # Pull Request settings

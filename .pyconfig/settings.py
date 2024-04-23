@@ -119,9 +119,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   #############################################################################
   debian_enabled = (clone_dir / "debian" / "control").is_file()
   debian_builder_base_images_matrix = json.dumps(cfg.debian.builder.base_images)
-  debian_builder_docker_build_platforms = ",".join(
-    [f"linux/{arch}" for arch in cfg.debian.builder.architectures]
-  )
   debian_builder_registries = extract_registries(
     repo_org,
     [
@@ -134,8 +131,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   #############################################################################
   # CI infrastructure settings
   #############################################################################
-  admin_repo = cfg.ci.images.admin.image.split(":")[0]
-  admin_tag = cfg.ci.images.admin.image.split(":")[-1]
   admin_registries = extract_registries(
     repo_org,
     [
@@ -143,7 +138,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
       cfg.ci.images.admin.base_image,
     ],
   )
-  admin_build_platforms_config = ",".join(cfg.ci.images.admin.build_platforms)
 
   release_base_images = list({release_cfg.base_image for release_cfg in cfg.release.profiles})
 
@@ -182,10 +176,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
               "dockerhub": "dockerhub" in admin_registries,
               "github": "github" in admin_registries,
             },
-            "repo": admin_repo,
-            "tag": admin_tag,
-            "tags_config": admin_tag,
-            "build_platforms_config": admin_build_platforms_config,
           },
           "tester": {
             "base_images_matrix": tester_base_images_matrix,
@@ -208,7 +198,6 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "builder": {
           "base_images_matrix": debian_builder_base_images_matrix,
           "architectures_matrix": debian_builder_architectures_matrix,
-          "build_platforms_config": debian_builder_docker_build_platforms,
           "login": {
             "dockerhub": "dockerhub" in debian_builder_registries,
             "github": "github" in debian_builder_registries,

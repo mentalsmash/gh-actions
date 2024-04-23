@@ -44,6 +44,8 @@ jobs:
         run: |
           (
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
+            printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
+            printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"
@@ -51,6 +53,10 @@ jobs:
         with:
           image: ${{ steps.config.outputs.ADMIN_IMAGE }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
           args: |
             -c
             ${{ github.run_id }}
