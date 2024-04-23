@@ -200,5 +200,7 @@ jobs:
           action: push
 
   log:
+    needs:
+      - push
     uses: ./.github/workflows/release_log_docker.yml
     secrets: inherit
