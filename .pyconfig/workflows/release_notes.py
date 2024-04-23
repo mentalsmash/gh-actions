@@ -19,6 +19,8 @@ import json
 from fnmatch import fnmatch
 from itertools import chain
 
+from release_tracker import ReleaseTracker
+
 
 def _image_link(github: NamedTuple, cfg: NamedTuple, image: str) -> str:
   image_repo = image.split(":")[0]
@@ -47,8 +49,11 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   # Read list of generated images from the release-tracker's summary
   reltracker_summary_f = Path(f"{cfg.build.artifacts_dir}/release-tracker-summary.json")
   reltracker_summary = json.loads(reltracker_summary_f.read_text())
+  reltracker_version_id = ReleaseTracker.version_id(
+    reltracker_summary["entry"]["created_at"], reltracker_summary["entry"]["version"]
+  )
   release_docker_manifest_f_rel = Path(
-    f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_summary['entry']}"
+    f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_version_id}"
   )
   release_docker_manifest_f = (
     Path(f"{github.workspace}/{reltracker_summary['path']}") / release_docker_manifest_f_rel
@@ -121,7 +126,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     # + " |",
     "| **Release Log** | "
     + (
-      f"[{reltracker_summary['entry']}]({cfg.release.tracker.url}/blob/{reltracker_commit}/{reltracker_summary['entry']}/{release_docker_manifest_f_rel})"
+      f"[{reltracker_version_id}]({cfg.release.tracker.url}/blob/{reltracker_commit}/{reltracker_version_id}/{release_docker_manifest_f_rel})"
     )
     + " |",
     "",
