@@ -52,7 +52,6 @@ jobs:
 
   cleanup-tracker:
     needs:
-      - log
       - release-docker
       - release-deb
     uses: ./.github/workflows/release_cleanup_tracker.yml
