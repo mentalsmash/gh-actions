@@ -88,6 +88,13 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   final_repos_config = "\n".join(cfg.release.final_repos)
   final_images_config = "\n".join(release_images)
 
+  if "github" in release_registries:
+    gh_release_repo = next(repo for repo in cfg.release.final_repos if repo.startswith("ghcr.io/"))
+    gh_org_package = gh_release_repo.split("ghcr.io/")[1]
+    gh_org, gh_package = gh_org_package.split("/")
+  else:
+    gh_org, gh_package = "", ""
+
   release_test_runners_matrix = json.dumps(
     [
       json.dumps(getattr(cfg.ci.runners, platform.replace("/", "_")))
@@ -235,6 +242,10 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "login_prerel": {
           "dockerhub": "dockerhub" in prerel_registries,
           "github": "github" in prerel_registries,
+        },
+        "gh": {
+          "org": gh_org,
+          "package": gh_package,
         },
         "tag": release_tag,
         "tags_config": release_cfg.tags_config,

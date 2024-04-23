@@ -42,7 +42,18 @@ jobs:
         id: config
         run: |
           (
-            echo ADMIN_IMAGE=$(jq '.ci.images.admin.image' -r pyconfig.json)
+            printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
+            printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
+            printf -- "BUILD_VERSION=%s\n" "$(jq '.build.version' -r pyconfig.json)"
+            printf -- "GH_ORG=%s\n" "$(jq '.release.gh.org' -r pyconfig.json)"
+            printf -- "GH_PACKAGE=%s\n" "$(jq '.release.gh.package' -r pyconfig.json)"
+            echo "RELEASE_FINAL_IMAGES<<EOF"
+            jq '.release.final_images_config' -r pyconfig.json
+            echo
+            echo EOF
+            printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
+            printf -- "TRACKER_USER_EMAIL=%s\n" "$(jq '.release.tracker.user.email' -r pyconfig.json)"
+            printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"
@@ -56,3 +67,46 @@ jobs:
             nightly-cleanup
             -r
             ${{ github.repository }}
+
+      - name: Clone release tracker
+        uses: mentalsmash/actions/release-tracker/checkout@master
+        if: steps.config.outputs.GH_PACKAGE
+        with:
+          repository: ${{ steps.config.outputs.TRACKER_REPO }}
+          user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
+          user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
+          token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
+
+      - name: Generate list of prunable docker layers
+        uses: mentalsmash/actions/release-tracker/find-prunable-docker@master
+        if: steps.config.outputs.GH_PACKAGE
+        id: layers
+        with:
+          repository: ${{ steps.config.outputs.TRACKER_REPO }}
+          track: ${{ steps.config.outputs.BUILD_PROFILE }}
+
+      - name: Write layers list to file
+        run: |
+          (
+            cat << EOF
+            ${{ steps.layers.outputs.layers }}
+            EOF
+          ) > prunable_layers.log
+
+      - name: Delete old docker layers from GitHub Package
+        uses: mentalsmash/actions/ci/admin@master
+        if: steps.config.outputs.GH_PACKAGE
+        with:
+          image: ${{ steps.config.outputs.ADMIN_IMAGE }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: |
+            -c
+            ${{ github.run_id }}
+            prune-versions
+            -o
+            ${{ steps.config.outputs.GH_ORG }}
+            -p
+            ${{ steps.config.outputs.GH_PACKAGE }}
+            -P
+            /workspace/prunable_layers.log
+
