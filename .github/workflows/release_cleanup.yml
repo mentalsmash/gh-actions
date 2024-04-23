@@ -37,7 +37,6 @@ jobs:
         uses: mentalsmash/actions/pyconfig/configuration@master
         with:
           clone-dir: ${{ env.CLONE_DIR }}
-          workflow: pull_request
   
       - name: Configure workflow
         id: config
