@@ -12,11 +12,11 @@ on:
       - master
     paths:
       - docker/tester/**
-      - .github/workflows/image_build_tester.yml
-      - .github/workflows_pyconfig/settings.*
+      - .github/workflows/docker_build_tester.yml
+      - .pyconfig/settings.*
 
 concurrency:
-  group: image-build-tester
+  group: docker-build-tester
   cancel-in-progress: true
 
 permissions:
