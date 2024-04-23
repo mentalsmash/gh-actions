@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import NamedTuple
 import json
 from fnmatch import fnmatch
-from functools import chain
+from itertools import chain
 
 
 def _image_link(github: NamedTuple, cfg: NamedTuple, image: str) -> str:
