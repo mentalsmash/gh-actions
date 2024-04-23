@@ -39,6 +39,7 @@ jobs:
           (
             printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
             printf -- "BUILD_VERSION=%s\n" "$(jq '.build.version' -r pyconfig.json)"
+            printf -- "BUILD_DATE=%s\n" "$(jq '.build.date' -r pyconfig.json)"
             printf -- "GH_ORG=%s\n" "$(jq '.release.gh.org' -r pyconfig.json)"
             printf -- "GH_PACKAGE=%s\n" "$(jq '.release.gh.package' -r pyconfig.json)"
             printf -- "TRACKER_USER_NAME=%s\n" "$(jq '.release.tracker.user.name' -r pyconfig.json)"
@@ -69,3 +70,13 @@ jobs:
           version: ${{ steps.config.outputs.BUILD_VERSION }}
           images: ${{ steps.config.outputs.RELEASE_FINAL_IMAGES }}
 
+      - name: Read commit hash
+        run: |
+          echo TRACKER_COMMIT=$(cd src/tracker && git rev-parse --short HEAD) >> release-tracker.commit
+      
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-tracker-${{ steps.config.outputs.BUILD_DATE }}
+          path: release-tracker*
+        if: always()

@@ -198,3 +198,7 @@ jobs:
           dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
           dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
           action: push
+
+  log:
+    uses: ./.github/workflows/release_log_docker.yml
+    secrets: inherit
