@@ -80,7 +80,7 @@ jobs:
         if: steps.config.outputs.GH_PACKAGE
         with:
           image: ${{ steps.config.outputs.ADMIN_IMAGE }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PACKAGE_VERSIONS_PAT }}
           args: |
             -c
             ${{ github.run_id }}
