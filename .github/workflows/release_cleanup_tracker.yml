@@ -1,18 +1,14 @@
-name: Release (Cleanup)
+name: Release Tracker (Cleanup)
 run-name: |
-  release cleanup [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
+  release tracker cleanup [${{github.ref_type == 'tag' && 'stable' || 'nightly' }}, ${{github.ref_name}}]
 
 on:
   workflow_dispatch:
 
-  workflow_run:
-    workflows: ["Release"]
-    types: [completed]
-    branches: [master]
+  workflow_call:
 
 concurrency:
-  # group: release-cleanup-${{ github.ref }}
-  group: docker-release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}
+  group: release-tracker
   cancel-in-progress: false
 
 permissions:
@@ -23,8 +19,7 @@ env:
   CLONE_DIR: src/repo
 
 jobs:
-  cleanup_jobs:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+  cleanup:
     runs-on: ubuntu-latest
     steps:
       - name: Clone source repository
@@ -56,18 +51,6 @@ jobs:
             printf -- "TRACKER_REPO=%s\n" "$(jq '.release.tracker.repository' -r pyconfig.json)"
           ) | tee -a ${GITHUB_OUTPUT}
 
-      - name: "Clean up workflow runs"
-        uses: mentalsmash/actions/ci/admin@master
-        with:
-          image: ${{ steps.config.outputs.ADMIN_IMAGE }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: |
-            -c
-            ${{ github.run_id }}
-            nightly-cleanup
-            -r
-            ${{ github.repository }}
-
       - name: Clone release tracker
         uses: mentalsmash/actions/release-tracker/checkout@master
         if: steps.config.outputs.GH_PACKAGE
@@ -85,7 +68,7 @@ jobs:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           track: ${{ steps.config.outputs.BUILD_PROFILE }}
 
-      - name: Write layers list to file
+      - name: Write results to file
         run: |
           (
             cat << EOF
@@ -110,9 +93,11 @@ jobs:
             -P
             /workspace/prunable_layers.log
 
-      # - name: Delete pruned versions
-      #   uses: mentalsmash/actions/release-tracker/prune-docker@master
-      #   if: steps.config.outputs.GH_PACKAGE
-      #   with:
-      #     repository: ${{ steps.config.outputs.TRACKER_REPO }}
-      #     track: ${{ steps.config.outputs.BUILD_PROFILE }}
+      - name: Delete pruned versions
+        uses: mentalsmash/actions/release-tracker/delete@master
+        if: steps.config.outputs.GH_PACKAGE
+        with:
+          repository: ${{ steps.config.outputs.TRACKER_REPO }}
+          track: ${{ steps.config.outputs.BUILD_PROFILE }}
+          entries: ${{ steps.layers.outputs.versions }}
+

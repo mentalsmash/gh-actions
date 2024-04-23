@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: deb-release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write

@@ -13,15 +13,22 @@ on:
       - '!*/**'
 
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: true
+  group: release-${{github.ref_type == 'tag' && 'stable' || 'nightly' }}
+  cancel-in-progress: false
 
 permissions:
+  actions:  write
   contents: write
   packages: write
 
 jobs:
+  cleanup-prerelease:
+    uses: ./.github/workflows/release_cleanup_prerelease.yml
+    secrets: inherit
+
   release-docker:
+    needs:
+    - cleanup-prerelease
     uses: ./.github/workflows/release_docker.yml
     secrets: inherit
   
@@ -29,9 +36,29 @@ jobs:
     uses: ./.github/workflows/release_deb.yml
     secrets: inherit
 
+  log:
+    needs:
+      - release-docker
+    uses: ./.github/workflows/release_log.yml
+    secrets: inherit
+  
   summary:
     needs:
       - release-docker
       - release-deb
     uses: ./.github/workflows/release_summary.yml
+    secrets: inherit
+
+  cleanup-jobs:
+    needs:
+      - release-docker
+      - release-deb
+    uses: ./.github/workflows/release_cleanup_jobs.yml
+    secrets: inherit
+
+  cleanup-tracker:
+    needs:
+      - release-docker
+      - release-deb
+    uses: ./.github/workflows/release_cleanup_tracker.yml
     secrets: inherit
