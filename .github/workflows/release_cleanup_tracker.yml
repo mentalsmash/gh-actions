@@ -70,10 +70,9 @@ jobs:
 
       - name: Write results to file
         run: |
-          (
-            cat << EOF
-            ${{ steps.layers.outputs.layers }}
-            EOF
+          (cat << EOF
+          ${{ steps.layers.outputs.layers }}
+          EOF
           ) > prunable_layers.log
 
       - name: Delete old docker layers from GitHub Package
