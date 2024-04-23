@@ -52,4 +52,5 @@ jobs:
         with:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           path: ${{ env.TRACKER_DIR }}
+          token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}
 
