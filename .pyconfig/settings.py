@@ -92,7 +92,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
 
   if "github" in release_registries:
     gh_release_repo = next(repo for repo in cfg.release.final_repos if repo.startswith("ghcr.io/"))
-    gh_package_image = next(img for img in release_images if repo.startswith("ghcr.io/"))
+    gh_package_image = next(img for img in release_images if img.startswith("ghcr.io/"))
     gh_org_package = gh_release_repo.split("ghcr.io/")[1]
     gh_org, gh_package = gh_org_package.split("/")
   else:
