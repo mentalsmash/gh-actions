@@ -128,8 +128,8 @@ jobs:
           ${{ steps.config.outputs.GH_ORG }}
           -p
           ${{ steps.config.outputs.GH_PACKAGE }}
-          -f
-          ''${{ steps.config.outputs.BUILD_PROFILE }}'
+          -t
+          ${{ steps.config.outputs.BUILD_PROFILE }}
 
     - name: Extract hash of top-level docker manifests
       id: hashes
