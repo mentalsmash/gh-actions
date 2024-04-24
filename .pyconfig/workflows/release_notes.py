@@ -90,7 +90,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   missing_images = set(cfg.release.final_images) - generated_images
 
   # Detect generated Debian packages
-  deb_packages = list(cfg.build.artifacts_dir.glob("*.deb"))
+  deb_packages = list(Path(cfg.build.artifacts_dir).glob("*.deb"))
   expected_deb_packages_globs = [
     f"{cfg.build.repository.name}_*_{arch}.deb" for arch in cfg.debian.builder.architectures
   ]
