@@ -54,7 +54,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     reltracker_summary["entry"]["created_at"], reltracker_summary["entry"]["version"]
   )
   release_docker_manifest_f_rel = Path(
-    f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_version_id}"
+    f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_version_id}/docker-manifests.json"
   )
   release_docker_manifest_f = workspace_dir / release_docker_manifest_f_rel
   release_docker_manifest = json.loads(release_docker_manifest_f.read_text())
