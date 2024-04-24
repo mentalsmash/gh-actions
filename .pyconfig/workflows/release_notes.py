@@ -148,7 +148,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
       "".join(
         [
           "<ul>",
-          *(f"<li>{_deb_pkg_link(pkg)}</li>" for pkg in deb_packages),
+          *(f"<li>{_deb_pkg_link(github, cfg, pkg)}</li>" for pkg in deb_packages),
           "</ul>",
         ]
       )

@@ -37,6 +37,10 @@ jobs:
       id: config
       run: |
         (
+          printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
+          printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
+          printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
+
           printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
           printf -- "BUILD_VERSION=%s\n" "$(jq '.build.version' -j pyconfig.json)"
           printf -- "%s\n" "DOCKER_TAGS_CONFIG<<EOF"
@@ -58,6 +62,9 @@ jobs:
           printf -- "%s\n" EOF
 
           printf -- "GH_RELEASE_URL=%s\n" "$(jq '.release.gh.release.url' -j pyconfig.json)"
+          printf -- "GH_ORG=%s\n" "$(jq '.release.gh.org' -j pyconfig.json)"
+          printf -- "GH_PACKAGE=%s\n" "$(jq '.release.gh.package' -j pyconfig.json)"
+          printf -- "GH_PACKAGE_IMAGE=%s\n" "$(jq '.release.gh.package_image' -j pyconfig.json)"
 
           echo DEB_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
           echo DEB_BUILD_ARCHITECTURES_MATRIX=$(jq '.debian.builder.architectures_matrix' -r pyconfig.json)
@@ -88,7 +95,7 @@ jobs:
           echo BADGE_VERSION_MESSAGE=$(jq '.release.badge.version.message' -r pyconfig.json)
         ) | tee -a ${GITHUB_OUTPUT}
       
-    - name: Build image
+    - name: Build and push final images
       uses: mentalsmash/actions/docker/builder@master
       with:
         base-image: ${{ steps.config.outputs.PRERELEASE_IMAGE }}
@@ -103,6 +110,34 @@ jobs:
         dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
         dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
         action: push
+
+    - name: Lookup hash of top-level docker manifest
+      uses: mentalsmash/actions/ci/admin@master
+      with:
+        image: ${{ steps.config.outputs.ADMIN_IMAGE }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+        github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+        dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+        dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+        args: |
+          -c
+          ${{ github.run_id }}
+          select-versions
+          -o
+          ${{ steps.config.outputs.GH_ORG }}
+          -p
+          ${{ steps.config.outputs.GH_PACKAGE }}
+          -f
+          ''${{ steps.config.outputs.BUILD_PROFILE }}'
+
+    - name: Extract hash of top-level docker manifests
+      id: hashes
+      run: |
+        (
+          printf -- "GH_MANIFEST_HASH=%s\n" \
+            "$(grep "'${{ steps.config.outputs.BUILD_PROFILE }}'" ci-admin.log | awk '{ print $2; }' | tee gh-manifest.hash)"
+        ) >> ${GITHUB_OUTPUT}
 
     - name: Clone release tracker
       uses: mentalsmash/actions/release-tracker/checkout@master
@@ -126,6 +161,8 @@ jobs:
         track: ${{ steps.config.outputs.BUILD_PROFILE }}
         version: ${{ steps.config.outputs.BUILD_VERSION }}
         images: ${{ steps.config.outputs.RELEASE_FINAL_IMAGES }}
+        hashes: |
+          ${{ steps.config.outputs.GH_PACKAGE_IMAGE }}=${{ steps.hashes.outputs.GH_MANIFEST_HASH }}
 
     - name: Generate release tracker artifacts
       run: |

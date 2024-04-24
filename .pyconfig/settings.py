@@ -92,10 +92,12 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
 
   if "github" in release_registries:
     gh_release_repo = next(repo for repo in cfg.release.final_repos if repo.startswith("ghcr.io/"))
+    gh_package_image = next(img for img in release_images if repo.startswith("ghcr.io/"))
     gh_org_package = gh_release_repo.split("ghcr.io/")[1]
     gh_org, gh_package = gh_org_package.split("/")
   else:
     gh_org, gh_package = "", ""
+    gh_package_image = ""
 
   gh_release_url = f"{repo_url}/releases/tag/{github.ref_name}"
   gh_release_create = github.ref_type == "tag"
@@ -252,6 +254,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "gh": {
           "org": gh_org,
           "package": gh_package,
+          "package_image": gh_package_image,
           "release": {
             "url": gh_release_url,
             "create": gh_release_create,
