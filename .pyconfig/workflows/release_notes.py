@@ -43,6 +43,7 @@ def _deb_pkg_link(github: NamedTuple, cfg: NamedTuple, pkg: Path) -> str:
 
 
 def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: NamedTuple) -> str:
+  workspace_dir = Path(f"{github.workspace}")
   # Read release-tracker commit id
   reltracker_commit_f = Path(f"{cfg.build.artifacts_dir}/release-tracker.commit")
   reltracker_commit = reltracker_commit_f.read_text()
@@ -55,9 +56,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   release_docker_manifest_f_rel = Path(
     f"{reltracker_summary['storage']}/{reltracker_summary['track']}/{reltracker_version_id}"
   )
-  release_docker_manifest_f = (
-    Path(f"{github.workspace}/{reltracker_summary['path']}") / release_docker_manifest_f_rel
-  )
+  release_docker_manifest_f = workspace_dir / release_docker_manifest_f_rel
   release_docker_manifest = json.loads(release_docker_manifest_f.read_text())
 
   release_docker_layers = {}
