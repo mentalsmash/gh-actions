@@ -111,6 +111,10 @@ jobs:
         dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
         action: push
 
+    - name: Wait for package to be published
+      run: |
+        sleep 5
+
     - name: Lookup hash of top-level docker manifest
       uses: mentalsmash/actions/ci/admin@master
       with:
