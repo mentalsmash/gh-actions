@@ -84,10 +84,6 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     }
     img_layers.update(arch_layers)
     img_layers.update(unknown_layers)
-  import pprint
-
-  print("==== release_docker_layers ====")
-  pprint.pprint(release_docker_layers)
 
   generated_images = set(release_docker_manifest["images"].keys())
   # generated_images = reduce(lambda r, v: r | set(v), release_docker_manifest["layers"].values(), set())
@@ -196,7 +192,8 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     *chain.from_iterable(
       [
         f"| `{layer['image']}` | `{digest}` | `{layer['platform']['os']}`/`{layer['platform']['architecture']}`{' (unknown)' if layer['unknown'] else ''} |"
-        for digest, layer in release_docker_layers.items()
+        for layers in release_docker_layers.values()
+        for digest, layer in layers.items()
       ]
     ),
     "",
