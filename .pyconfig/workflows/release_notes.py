@@ -84,6 +84,10 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     }
     img_layers.update(arch_layers)
     img_layers.update(unknown_layers)
+  import pprint
+
+  print("==== release_docker_layers ====")
+  pprint.pprint(release_docker_layers)
 
   generated_images = set(release_docker_manifest["images"].keys())
   # generated_images = reduce(lambda r, v: r | set(v), release_docker_manifest["layers"].values(), set())

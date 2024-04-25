@@ -31,7 +31,7 @@ debian:
   builder:
     architectures:
     - amd64
-    - arm64
+    # - arm64
     base_images:
     - ubuntu:22.04
     repo: ghcr.io/mentalsmash/debian-builder
@@ -90,7 +90,7 @@ release:
       # Build platforms
       build_platforms:
       - linux/amd64
-      - linux/arm64
+      # - linux/arm64
       # The main tag for the generated image
       tag: nightly
       # Add a custom suffix to all generated tags
@@ -116,7 +116,7 @@ release:
       # Build platforms
       build_platforms:
       - linux/amd64
-      - linux/arm64
+      # - linux/arm64
       # The main tag for the generated image
       tag: latest
       # Add a custom suffix to all generated tags
