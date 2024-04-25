@@ -66,6 +66,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
       layer["digest"]: {
         "image": img,
         "platform": layer["platform"],
+        "unknown": False,
       }
       for layer in img_manifest["manifests"]
       if layer["platform"]["os"] != "unknown"
