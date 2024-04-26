@@ -180,6 +180,12 @@ jobs:
         clone-dir: ${{ env.CLONE_DIR }}
         workflow: release_notes
         output: release-notes.md
+    
+    - name: Upload release notes
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-notes
+        path: release-notes.md
 
     - name: Create new GitHub release
       if: steps.config.outputs.RELEASE_GH_CREATE
