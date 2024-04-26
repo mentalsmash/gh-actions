@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import NamedTuple
 import json
 from fnmatch import fnmatch
-from itertools import chain
 
 from release_tracker import ReleaseTracker
 
@@ -86,6 +85,8 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     img_layers.update(arch_layers)
     img_layers.update(unknown_layers)
 
+  reltracker_log_url = f"{cfg.release.tracker.url}/blob/{reltracker_commit}/{cfg.build.profile}/{release_docker_manifest_f_rel}"
+
   generated_images = set(release_docker_manifest["images"].keys())
   # generated_images = reduce(lambda r, v: r | set(v), release_docker_manifest["layers"].values(), set())
   missing_images = set(cfg.release.final_images) - generated_images
@@ -105,7 +106,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   missing_section = bool(missing_images or missing_deb_packages)
 
   result = [
-    f"# {cfg.build.profile} release - {cfg.build.repository} - {cfg.build.version}",
+    f"# {cfg.build.repository.name} - {cfg.build.profile} release - {cfg.build.version}",
     "",
     "## Configuration",
     "",
@@ -124,11 +125,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     #   else "N/A"
     # )
     # + " |",
-    "| **Release Log** | "
-    + (
-      f"[{reltracker_version_id}]({cfg.release.tracker.url}/blob/{reltracker_commit}/{reltracker_version_id}/{release_docker_manifest_f_rel})"
-    )
-    + " |",
+    "| **Release Log** | " f"[{reltracker_version_id}]({reltracker_log_url})" " |",
     "",
     "## Artifacts",
     "",
@@ -190,12 +187,10 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     "## Docker Image Manifests ",
     "| **Image** | **Manifest** | **Platform** |",
     "|-----------|--------------|--------------|",
-    *chain.from_iterable(
-      [
-        f"| `{layer['image']}` | `{digest}` | `{layer['platform']['os']}`/`{layer['platform']['architecture']}`{' (unknown)' if layer['unknown'] else ''} |"
-        for layers in release_docker_layers.values()
-        for digest, layer in layers.items()
-      ]
+    *(
+      f"| `{layer['image']}` | `{digest}` | `{layer['platform']['os']}`/`{layer['platform']['architecture']}`{' (unknown)' if layer['unknown'] else ''} |"
+      for layers in release_docker_layers.values()
+      for digest, layer in layers.items()
     ),
     "",
   ]

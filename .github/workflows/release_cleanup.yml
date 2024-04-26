@@ -40,17 +40,16 @@ jobs:
             printf -- "ADMIN_IMAGE=%s\n" "$(jq '.ci.images.admin.image' -r pyconfig.json)"
 
             printf -- "BUILD_PROFILE=%s\n" "$(jq '.build.profile' -r pyconfig.json)"
-
+            
             printf -- "LOGIN_DOCKERHUB=%s\n" "$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)"
             printf -- "LOGIN_GITHUB=%s\n" "$(jq '.ci.images.admin.login.github' -r pyconfig.json)"
-
+            
             echo GH_ORG=$(jq '.release.gh.org' -r pyconfig.json)
             echo GH_PACKAGE=$(jq '.release.gh.package' -r pyconfig.json)
-
+            
             echo TRACKER_USER_NAME=$(jq '.release.tracker.user.name' -r pyconfig.json)
             echo TRACKER_USER_EMAIL=$(jq '.release.tracker.user.email' -r pyconfig.json)
             echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
-
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"
@@ -87,12 +86,17 @@ jobs:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           track: ${{ steps.config.outputs.BUILD_PROFILE }}
 
-      - name: Write results to file
+      - name: Read list of prunable/unprunable layers
         run: |
           (cat << EOF
-          ${{ steps.layers.outputs.layers }}
+          ${{ steps.layers.outputs.prunable-layers }}
           EOF
           ) > prunable_layers.log
+
+          (cat << EOF
+          ${{ steps.layers.outputs.unprunable-layers }}
+          EOF
+          ) > unprunable_layers.log
 
       - name: Delete old docker layers from GitHub Package
         uses: mentalsmash/actions/ci/admin@master
@@ -112,13 +116,13 @@ jobs:
             ${{ steps.config.outputs.GH_ORG }}
             -p
             ${{ steps.config.outputs.GH_PACKAGE }}
-            -P
-            /workspace/prunable_layers.log
+            -R
+            /workspace/unprunable_layers.log
 
       - name: Delete pruned versions
         uses: mentalsmash/actions/release-tracker/delete@master
-        if: steps.config.outputs.GH_PACKAGE && steps.layers.outputs.versions
+        if: steps.config.outputs.GH_PACKAGE && steps.layers.outputs.prunable-versions
         with:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
           track: ${{ steps.config.outputs.BUILD_PROFILE }}
-          entries: ${{ steps.layers.outputs.versions }}
+          entries: ${{ steps.layers.outputs.prunable-versions }}
