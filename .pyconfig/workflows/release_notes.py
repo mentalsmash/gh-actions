@@ -85,7 +85,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
     img_layers.update(arch_layers)
     img_layers.update(unknown_layers)
 
-  reltracker_log_url = f"{cfg.release.tracker.url}/blob/{reltracker_commit}/{cfg.build.profile}/{release_docker_manifest_f_rel}"
+  reltracker_log_url = f"{cfg.release.tracker.repository.url}/blob/{reltracker_commit}/{cfg.build.profile}/{release_docker_manifest_f_rel}"
 
   generated_images = set(release_docker_manifest["images"].keys())
   # generated_images = reduce(lambda r, v: r | set(v), release_docker_manifest["layers"].values(), set())
