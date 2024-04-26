@@ -84,7 +84,6 @@ jobs:
         id: layers
         with:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
-          track: ${{ steps.config.outputs.BUILD_PROFILE }}
 
       - name: Read list of prunable/unprunable layers
         run: |
