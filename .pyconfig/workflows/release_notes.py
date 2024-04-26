@@ -45,7 +45,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
   workspace_dir = Path(f"{github.workspace}")
   # Read release-tracker commit id
   reltracker_commit_f = Path(f"{cfg.build.artifacts_dir}/release-tracker.commit")
-  reltracker_commit = reltracker_commit_f.read_text()
+  reltracker_commit = reltracker_commit_f.read_text().strip()
   # Read list of generated images from the release-tracker's summary
   reltracker_summary_f = Path(f"{cfg.build.artifacts_dir}/release-tracker-summary.json")
   reltracker_summary = json.loads(reltracker_summary_f.read_text())
