@@ -196,20 +196,28 @@ jobs:
           artifacts/*.deb
     
     - name: Write release summary
+      shell: python
       run: |
-        (
-          cat release-notes.md >> ${GITHUB_STEP_SUMMARY}
+        import os
+        from pathlib import Path
 
-          if [ -n "${{ steps.config.outputs.RELEASE_GH_CREATE }}" ]; then
-            printf -- "\n"
-            printf -- "## GitHub Release\n"
-            printf -- "\n"
-            printf -- "- [%s](%s)\n" \
-              "${{ steps.config.outputs.BUILD_VERSION }}" \
-              "${{ steps.config.outputs.GH_RELEASE_URL }}"
-            printf -- "\n"
-          fi
-        ) >> ${GITHUB_STEP_SUMMARY}
+        rel_notes = Path("release-notes.md")
+        summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+
+        if "${{ steps.config.outputs.RELEASE_GH_CREATE }}".strip():
+          github_rel = "\n".join((
+            "",
+            "## GitHub Release",
+            "",
+            "${{ steps.config.outputs.BUILD_VERSION }}",
+            "${{ steps.config.outputs.GH_RELEASE_URL }}",
+          ))
+        else:
+          github_rel = ""
+
+        with summary.open("w") as output:
+          output.write(rel_notes.read_text())
+          output.write(github_rel)
 
     - name: Update version badge
       uses: schneegans/dynamic-badges-action@v1.7.0
