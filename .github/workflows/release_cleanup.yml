@@ -49,7 +49,8 @@ jobs:
             
             echo TRACKER_USER_NAME=$(jq '.release.tracker.user.name' -r pyconfig.json)
             echo TRACKER_USER_EMAIL=$(jq '.release.tracker.user.email' -r pyconfig.json)
-            echo TRACKER_REPO=$(jq '.release.tracker.repository' -r pyconfig.json)
+            echo TRACKER_REPO=$(jq '.release.tracker.repository.name' -r pyconfig.json)
+            echo TRACKER_REPO_REF=$(jq '.release.tracker.repository.ref' -r pyconfig.json)
           ) | tee -a ${GITHUB_OUTPUT}
 
       - name: "Clean up workflow runs"
@@ -74,6 +75,7 @@ jobs:
         if: steps.config.outputs.GH_PACKAGE
         with:
           repository: ${{ steps.config.outputs.TRACKER_REPO }}
+          ref: ${{ steps.config.outputs.TRACKER_REPO_REF }}
           user-name: ${{ steps.config.outputs.TRACKER_USER_NAME }}
           user-email: ${{ steps.config.outputs.TRACKER_USER_EMAIL }}
           token: ${{ secrets.RELEASE_TRACKER_REPO_PAT }}

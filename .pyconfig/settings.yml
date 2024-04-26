@@ -71,7 +71,9 @@ release:
   prerelease_package: mentalsmash/ref-project-debdocker-rc
 
   tracker:
-    repository: mentalsmash/ref-project-debdocker-release
+    repository:
+      name: mentalsmash/ref-project-debdocker-release
+      ref: master
     user:
       name: Automated Release Tracker
       email: mentalsmash-admin@users.noreply.github.com

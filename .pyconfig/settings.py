@@ -115,7 +115,7 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
   release_tracker_artifact_prefix = f"{repo}-tracker-{release_test_id}"
   release_tracker_artifact = f"{release_tracker_artifact_prefix}"
 
-  release_tracker_repo_url = f"https://github.com/{cfg.release.tracker.repository}"
+  release_tracker_repo_url = f"https://github.com/{cfg.release.tracker.repository.name}"
 
   release_notes_artifacts_prefix = f"{repo}-notes-{release_test_id}"
   release_notes_artifact = f"{release_notes_artifacts_prefix}"
@@ -272,7 +272,9 @@ def settings(clone_dir: Path, cfg: NamedTuple, github: NamedTuple) -> dict:
         "tracker": {
           "artifact": release_tracker_artifact,
           "artifact_prefix": release_tracker_artifact_prefix,
-          "url": release_tracker_repo_url,
+          "repository": {
+            "url": release_tracker_repo_url,
+          },
         },
       },
       tuple_to_dict(release_cfg),
