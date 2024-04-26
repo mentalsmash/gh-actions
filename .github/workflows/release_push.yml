@@ -187,29 +187,32 @@ jobs:
         name: release-notes
         path: release-notes.md
 
-    - name: Create new GitHub release
+    - name: Create new GitHub release for named release
       if: steps.config.outputs.RELEASE_GH_CREATE
       uses: softprops/action-gh-release@v2
       with:
         body_path: release-notes.md
         files: |
           artifacts/*.deb
-    
+
     - name: Write release summary
       run: |
         cat release-notes.md >> ${GITHUB_STEP_SUMMARY}
     
-    - name: Write GitHub release summary
-      if: steps.config.outputs.RELEASE_GH_CREATE
+    - name: Write release summary
       run: |
         (
-          printf -- "\n"
-          printf -- "## GitHub Release\n"
-          printf -- "\n"
-          printf -- "- [%s](%s)\n" \
-            "${{ steps.config.outputs.BUILD_VERSION }}" \
-            "${{ steps.config.outputs.GH_RELEASE_URL }}"
-          printf -- "\n"
+          cat release-notes.md >> ${GITHUB_STEP_SUMMARY}
+
+          if [ -n "${{ steps.config.outputs.RELEASE_GH_CREATE }}" ]; then
+            printf -- "\n"
+            printf -- "## GitHub Release\n"
+            printf -- "\n"
+            printf -- "- [%s](%s)\n" \
+              "${{ steps.config.outputs.BUILD_VERSION }}" \
+              "${{ steps.config.outputs.GH_RELEASE_URL }}"
+            printf -- "\n"
+          fi
         ) >> ${GITHUB_STEP_SUMMARY}
 
     - name: Update version badge

@@ -185,6 +185,7 @@ def summarize(clone_dir: Path, github: NamedTuple, inputs: NamedTuple, cfg: Name
       else []
     ),
     "## Docker Image Manifests ",
+    "",
     "| **Image** | **Manifest** | **Platform** |",
     "|-----------|--------------|--------------|",
     *(
