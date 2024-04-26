@@ -109,7 +109,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         github-user: ${{ github.actor }}
         dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
-        dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+        dockerhub-user: ${{ vars.DOCKERHUB_USERNAME }}
         action: push
 
     - name: Wait for package to be published
@@ -124,7 +124,7 @@ jobs:
         github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
         github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
         dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
-        dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+        dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && vars.DOCKERHUB_USERNAME || '' }}
         args: |
           -c
           ${{ github.run_id }}

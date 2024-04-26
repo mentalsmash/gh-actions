@@ -110,7 +110,7 @@ jobs:
         if: steps.config.outputs.LOGIN_DOCKERHUB
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Build tester image
