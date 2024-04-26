@@ -36,9 +36,3 @@ jobs:
       - deb
     uses: ./.github/workflows/release_push.yml
     secrets: inherit
-
-  cleanup:
-    needs:
-      - push
-    uses: ./.github/workflows/release_cleanup.yml
-    secrets: inherit

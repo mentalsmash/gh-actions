@@ -211,8 +211,8 @@ jobs:
             "",
             "## GitHub Release",
             "",
-            "${{ steps.config.outputs.BUILD_VERSION }}",
-            "${{ steps.config.outputs.GH_RELEASE_URL }}",
+            "[${{ steps.config.outputs.BUILD_VERSION }}](${{ steps.config.outputs.GH_RELEASE_URL }})",
+            "",
           ))
         else:
           github_rel = ""
