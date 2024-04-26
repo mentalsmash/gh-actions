@@ -194,10 +194,6 @@ jobs:
         body_path: release-notes.md
         files: |
           artifacts/*.deb
-
-    - name: Write release summary
-      run: |
-        cat release-notes.md >> ${GITHUB_STEP_SUMMARY}
     
     - name: Write release summary
       run: |
